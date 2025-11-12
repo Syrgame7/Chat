@@ -14,27 +14,27 @@ const io = socketIo(server, {
 // خدمة الملفات الثابتة
 app.use(express.static(path.join(__dirname, 'public')));
 
-// نقطة نهاية لرفع الصوت باستخدام tmpfiles.org
+// نقطة نهاية لرفع الصوت باستخدام 0x0.st
 app.post('/upload-audio', express.raw({ type: 'application/octet-stream', limit: '10mb' }), async (req, res) => {
   try {
     const form = new FormData();
     form.append('file', req.body, 'recording.webm');
 
-    const response = await axios.post('https://tmpfiles.org/api/v1/upload', form, {
+    const response = await axios.post('https://0x0.st', form, {
       headers: form.getHeaders(),
       timeout: 15000
     });
 
-    if (response.data && response.data.status === 'success') {
-      // تحويل الرابط إلى رابط تحميل مباشر
-      const directLink = response.data.data.url.replace('https://tmpfiles.org/', 'https://tmpfiles.org/dl/');
+    const directLink = response.data.trim();
+
+    if (directLink.startsWith('http')) {
       res.json({ success: true, url: directLink });
     } else {
-      res.json({ success: false, error: 'استجابة غير صالحة من الخدمة' });
+      res.json({ success: false, error: 'رابط غير صالح' });
     }
   } catch (err) {
     console.error('خطأ في رفع الصوت:', err.message);
-    res.status(500).json({ success: false, error: 'فشل الاتصال بخدمة الرفع' });
+    res.status(500).json({ success: false, error: 'فشل الاتصال بالخدمة' });
   }
 });
 
