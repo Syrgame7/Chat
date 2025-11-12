@@ -201,14 +201,11 @@
           formData.append('file', audioBlob, 'recording.webm');
 
           try {
-            const res = await fetch('https://tmpfiles.org/api/v1/upload', { method: 'POST', body: formData });
-            const data = await res.json();
-            if (data.status === 'success') {
-              const directLink = data.data.url.replace('https://tmpfiles.org/', 'https://tmpfiles.org/dl/');
-              socket.emit('send', { u: user.value || 'زائر', t: directLink, isAudio: true });
-            } else {
-              alert('فشل رفع الصوت. حاول مرة أخرى.');
-            }
+            // استخدام 0x0.st للحصول على رابط مباشر
+            const res = await fetch('https://0x0.st', { method: 'POST', body: formData });
+            const directLink = await res.text();
+
+            socket.emit('send', { u: user.value || 'زائر', t: directLink.trim(), isAudio: true });
           } catch (err) {
             alert('❌ فشل في رفع الصوت. حاول مرة أخرى.');
           }
