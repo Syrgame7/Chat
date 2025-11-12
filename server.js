@@ -14,25 +14,27 @@ const io = socketIo(server, {
 // خدمة الملفات الثابتة
 app.use(express.static(path.join(__dirname, 'public')));
 
-// نقطة نهاية لرفع الصوت (POST)
+// نقطة نهاية لرفع الصوت باستخدام tmpfiles.org
 app.post('/upload-audio', express.raw({ type: 'application/octet-stream', limit: '10mb' }), async (req, res) => {
   try {
     const form = new FormData();
     form.append('file', req.body, 'recording.webm');
 
-    const response = await axios.post('https://www.file.io/', form, {
+    const response = await axios.post('https://tmpfiles.org/api/v1/upload', form, {
       headers: form.getHeaders(),
-      timeout: 10000 // 10 ثوانٍ كحد أقصى
+      timeout: 15000
     });
 
-    if (response.data && response.data.success) {
-      res.json({ success: true, url: response.data.link });
+    if (response.data && response.data.status === 'success') {
+      // تحويل الرابط إلى رابط تحميل مباشر
+      const directLink = response.data.data.url.replace('https://tmpfiles.org/', 'https://tmpfiles.org/dl/');
+      res.json({ success: true, url: directLink });
     } else {
-      res.json({ success: false, error: 'فشل الرفع: استجابة غير صالحة' });
+      res.json({ success: false, error: 'استجابة غير صالحة من الخدمة' });
     }
   } catch (err) {
     console.error('خطأ في رفع الصوت:', err.message);
-    res.status(500).json({ success: false, error: 'خطأ في الخادم أثناء الرفع' });
+    res.status(500).json({ success: false, error: 'فشل الاتصال بخدمة الرفع' });
   }
 });
 
