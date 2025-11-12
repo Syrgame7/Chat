@@ -197,17 +197,27 @@
 
         mediaRecorder.onstop = async function() {
           const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-          const formData = new FormData();
-          formData.append('file', audioBlob, 'recording.webm');
 
+          // تحويل الـ Blob إلى ArrayBuffer
+          const arrayBuffer = await audioBlob.arrayBuffer();
+          const uint8Array = new Uint8Array(arrayBuffer);
+
+          // إرسال الـ ArrayBuffer إلى الخادم لرفعه
           try {
-            // استخدام 0x0.st للحصول على رابط مباشر
-            const res = await fetch('https://0x0.st', { method: 'POST', body: formData });
-            const directLink = await res.text();
+            const res = await fetch('/upload-audio', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/octet-stream' },
+              body: uint8Array
+            });
 
-            socket.emit('send', { u: user.value || 'زائر', t: directLink.trim(), isAudio: true });
+            const data = await res.json();
+            if (data.success) {
+              socket.emit('send', { u: user.value || 'زائر', t: data.url, isAudio: true });
+            } else {
+              throw new Error(data.error || 'فشل الرفع');
+            }
           } catch (err) {
-            alert('❌ فشل في رفع الصوت. حاول مرة أخرى.');
+            alert('❌ فشل في رفع الصوت: ' + (err.message || 'تحقق من الاتصال'));
           }
         };
       }
