@@ -1,17 +1,15 @@
 {
   "name": "chat-app",
   "version": "1.0.0",
-  "description": "تطبيق دردشة أونلاين مع دعم تسجيل الصوت عبر Cloudinary",
+  "description": "تطبيق دردشة مع تسجيل صوت",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
-  "keywords": ["chat", "websocket", "socket.io", "audio", "cloudinary"],
-  "author": "صانع محتوى",
-  "license": "MIT",
   "dependencies": {
     "express": "^4.18.2",
     "socket.io": "^4.7.2",
-    "cloudinary": "^1.41.0"
+    "axios": "^1.6.0",
+    "form-data": "^4.0.0"
   }
 }
