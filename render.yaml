@@ -8,6 +8,6 @@ services:
       - key: CLOUDINARY_CLOUD_NAME
         value: "dutrr6tj2"
       - key: CLOUDINARY_API_KEY
-        value: "276293994395546"
+        value: "997227339798211"
       - key: CLOUDINARY_API_SECRET
-        value: "mrnmkgbhPE-A5jhFwSurmsz9mwE"
+        value: "_o6ZiZAk26UfjBKbJZkw3ynrQGs"
