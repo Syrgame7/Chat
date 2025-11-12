@@ -2,8 +2,8 @@ const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const path = require('path');
-const axios = require('axios');
-const FormData = require('form-data');
+const cloudinary = require('cloudinary').v2;
+const fs = require('fs');
 
 const app = express();
 const server = http.createServer(app);
@@ -11,31 +11,39 @@ const io = socketIo(server, {
   cors: { origin: "*", methods: ["GET", "POST"] }
 });
 
+// تهيئة Cloudinary من المتغيرات البيئية
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
 // خدمة الملفات الثابتة
 app.use(express.static(path.join(__dirname, 'public')));
 
-// نقطة نهاية لرفع الصوت باستخدام 0x0.st
-app.post('/upload-audio', express.raw({ type: 'application/octet-stream', limit: '10mb' }), async (req, res) => {
-  try {
-    const form = new FormData();
-    form.append('file', req.body, 'recording.webm');
+// نقطة نهاية لرفع الصوت إلى Cloudinary
+app.post('/upload-audio', express.raw({ type: 'application/octet-stream', limit: '10mb' }), (req, res) => {
+  const filename = `audio_${Date.now()}.webm`;
+  const filepath = path.join(__dirname, filename);
 
-    const response = await axios.post('https://0x0.st', form, {
-      headers: form.getHeaders(),
-      timeout: 15000
-    });
+  // حفظ الملف مؤقتًا
+  fs.writeFileSync(filepath, req.body);
 
-    const directLink = response.data.trim();
-
-    if (directLink.startsWith('http')) {
-      res.json({ success: true, url: directLink });
-    } else {
-      res.json({ success: false, error: 'رابط غير صالح' });
+  // رفع إلى Cloudinary
+  cloudinary.uploader.upload(filepath, { resource_type: 'auto' }, (error, result) => {
+    // حذف الملف المؤقت
+    if (fs.existsSync(filepath)) {
+      fs.unlinkSync(filepath);
     }
-  } catch (err) {
-    console.error('خطأ في رفع الصوت:', err.message);
-    res.status(500).json({ success: false, error: 'فشل الاتصال بالخدمة' });
-  }
+
+    if (error) {
+      console.error('خطأ في رفع Cloudinary:', error.message);
+      return res.status(500).json({ success: false, error: 'فشل رفع الصوت' });
+    }
+
+    // إرجاع الرابط المباشر
+    res.json({ success: true, url: result.secure_url });
+  });
 });
 
 let messages = [];
