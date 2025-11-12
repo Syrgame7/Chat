@@ -10,14 +10,13 @@ const io = socketIo(server, {
 
 let messages = [];
 
-// تسليم واجهة الدردشة عند فتح الجذر
+// تسليم الواجهة عند فتح الجذر
 app.get('/', (req, res) => {
   res.send(`
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>دردشتي</title>
   <style>
     body{font-family:Arial;background:#e5ddd5;margin:0;padding:0;height:100vh;display:flex;flex-direction:column}
@@ -85,13 +84,13 @@ io.on('connection', (socket) => {
       time: new Date().toLocaleTimeString('ar-EG')
     };
     messages.push(msg);
-    // نحتفظ بآخر 100 رسالة فقط
     if (messages.length > 100) messages.shift();
     io.emit('msg', msg);
   });
 });
 
+// ✅ التصحيح الأساسي: الاستماع على 0.0.0.0 والمنفذ من البيئة
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log('السيرفر شغال');
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`✅ السيرفر شغال على المنفذ ${PORT}`);
 });
