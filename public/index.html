@@ -175,50 +175,53 @@
     let mediaRecorder;
     let audioChunks = [];
 
-    voiceBtn.addEventListener('click', async function() {
+    voiceBtn.addEventListener('click', function() {
       if (!isRecording) {
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          mediaRecorder = new MediaRecorder(stream);
-          audioChunks = [];
-          mediaRecorder.ondataavailable = function(e) { audioChunks.push(e.data); };
-          mediaRecorder.start();
-          isRecording = true;
-          voiceBtn.classList.add('recording');
-          voiceBtn.textContent = '🛑 إيقاف';
-        } catch (err) {
-          alert('لم يتمكن من الوصول للميكروفون: ' + err.message);
-        }
+        navigator.mediaDevices.getUserMedia({ audio: true })
+          .then(function(stream) {
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+            mediaRecorder.ondataavailable = function(e) { audioChunks.push(e.data); };
+            mediaRecorder.start();
+            isRecording = true;
+            voiceBtn.classList.add('recording');
+            voiceBtn.textContent = '🛑 إيقاف';
+          })
+          .catch(function(err) {
+            alert('لم يتمكن من الوصول للميكروفون: ' + err.message);
+          });
       } else {
         mediaRecorder.stop();
         isRecording = false;
         voiceBtn.classList.remove('recording');
         voiceBtn.textContent = '🎤 تسجيل';
 
-        mediaRecorder.onstop = async function() {
+        mediaRecorder.onstop = function() {
           const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
 
-          // تحويل الـ Blob إلى ArrayBuffer
-          const arrayBuffer = await audioBlob.arrayBuffer();
-          const uint8Array = new Uint8Array(arrayBuffer);
+          // تحويل Blob إلى ArrayBuffer
+          const reader = new FileReader();
+          reader.onload = function() {
+            const uint8Array = new Uint8Array(reader.result);
 
-          // إرسال الـ ArrayBuffer إلى الخادم لرفعه
-          try {
-            const res = await fetch('/upload-audio', {
+            fetch('/upload-audio', {
               method: 'POST',
               headers: { 'Content-Type': 'application/octet-stream' },
               body: uint8Array
+            })
+            .then(res => res.json())
+            .then(data => {
+              if (data.success) {
+                socket.emit('send', { u: user.value || 'زائر', t: data.url, isAudio: true });
+              } else {
+                alert('❌ فشل في رفع الصوت: ' + (data.error || 'غير معروف'));
+              }
+            })
+            .catch(err => {
+              alert('❌ خطأ في الاتصال بالخادم: ' + err.message);
             });
-
-            const data = await res.json();
-            if (data.success) {
-              socket.emit('send', { u: user.value || 'زائر', t: data.url, isAudio: true });
-            } else {
-              throw new Error(data.error || 'فشل الرفع');
-            }
-          } catch (err) {
-            alert('❌ فشل في رفع الصوت: ' + (err.message || 'تحقق من الاتصال'));
-          }
+          };
+          reader.readAsArrayBuffer(audioBlob);
         };
       }
     });
