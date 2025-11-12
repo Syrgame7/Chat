@@ -1,7 +1,7 @@
 {
   "name": "chat-app",
   "version": "1.0.0",
-  "description": "تطبيق دردشة مع تسجيل صوت",
+  "description": "دردشة مع دعم الصوت عبر Cloudinary",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -9,7 +9,6 @@
   "dependencies": {
     "express": "^4.18.2",
     "socket.io": "^4.7.2",
-    "axios": "^1.6.0",
-    "form-data": "^4.0.0"
+    "cloudinary": "^1.41.0"
   }
 }
