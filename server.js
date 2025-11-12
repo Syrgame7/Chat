@@ -10,7 +10,6 @@ const io = socketIo(server, {
 
 let messages = [];
 
-// تسليم الواجهة عند فتح الجذر
 app.get('/', (req, res) => {
   res.send(`
 <!DOCTYPE html>
@@ -96,7 +95,7 @@ app.get('/', (req, res) => {
       border-top: 1px solid #ccc;
       gap: 8px;
     }
-    .input-area input {
+    .input-area textarea {
       flex: 1;
       padding: 10px;
       font-size: 16px;
@@ -105,6 +104,9 @@ app.get('/', (req, res) => {
       border-radius: 20px;
       outline: none;
       min-height: 40px;
+      max-height: 120px;
+      overflow-y: auto;
+      resize: none;
     }
     .input-area button {
       border: none;
@@ -140,7 +142,7 @@ app.get('/', (req, res) => {
         max-width: 85%;
         font-size: 14px;
       }
-      .input-area input {
+      .input-area textarea {
         font-size: 14px;
       }
       .header {
@@ -155,9 +157,9 @@ app.get('/', (req, res) => {
   <div class="setup"><input type="text" id="user" placeholder="اسمك" value="زائر"></div>
   <div class="chat-container" id="msgs"></div>
   <div class="input-area">
-    <input type="text" id="txt" placeholder="اكتب رسالتك..." autocomplete="off" />
+    <textarea id="txt" placeholder="اكتب رسالتك..." autocomplete="off" rows="1" style="resize:none;"></textarea>
     <button id="sendBtn">إرسال</button>
-    <button class="voice-btn" id="voiceBtn">🎤</button>
+    <button class="voice-btn" id="voiceBtn">🎤 تسجيل</button>
   </div>
 
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
@@ -172,58 +174,61 @@ app.get('/', (req, res) => {
     socket.on('prev', m => m.forEach(msg => addMessage(msg, msg.id === socket.id ? 'sent' : 'received')));
     socket.on('msg', msg => addMessage(msg, msg.id === socket.id ? 'sent' : 'received'));
 
+    // تغيير حجم textarea تلقائيًا
+    txt.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = (this.scrollHeight) + 'px';
+    });
+
+    // تسجيل الصوت بضغطة واحدة
+    let isRecording = false;
+    let mediaRecorder;
+    let audioChunks = [];
+
+    voiceBtn.addEventListener('click', () => {
+      if (!isRecording) {
+        navigator.mediaDevices.getUserMedia({ audio: true })
+          .then(stream => {
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+            mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+            mediaRecorder.start();
+            isRecording = true;
+            voiceBtn.classList.add('recording');
+            voiceBtn.textContent = '🛑 إيقاف';
+            voiceBtn.title = 'انقر لإيقاف وإرسال';
+          })
+          .catch(err => {
+            alert('لم يتمكن من الوصول للميكروفون: ' + err.message);
+          });
+      } else {
+        mediaRecorder.stop();
+        isRecording = false;
+        voiceBtn.classList.remove('recording');
+        voiceBtn.textContent = '🎤 تسجيل';
+        voiceBtn.title = 'انقر لبدء التسجيل';
+
+        mediaRecorder.onstop = () => {
+          const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+          const audioUrl = URL.createObjectURL(audioBlob);
+          socket.emit('send', { u: user.value || 'زائر', t: audioUrl, isAudio: true });
+          setTimeout(() => URL.revokeObjectURL(audioUrl), 300000);
+        };
+      }
+    });
+
+    // إرسال الرسالة
+    sendBtn.addEventListener('click', send);
+    txt.addEventListener('keypress', e => { if (e.key === 'Enter') send(); });
+
     function send() {
       const text = txt.value.trim();
       if (text) {
         socket.emit('send', { u: user.value || 'زائر', t: text });
         txt.value = '';
+        txt.style.height = 'auto';
         txt.focus();
       }
-    }
-
-    sendBtn.addEventListener('click', send);
-    txt.addEventListener('keypress', e => { if (e.key === 'Enter') send(); });
-
-    // تسجيل الصوت
-    let mediaRecorder;
-    let audioChunks = [];
-    let isRecording = false;
-
-    voiceBtn.addEventListener('mousedown', startRecording);
-    voiceBtn.addEventListener('mouseup', stopRecording);
-    voiceBtn.addEventListener('touchstart', startRecording);
-    voiceBtn.addEventListener('touchend', stopRecording);
-
-    function startRecording() {
-      if (isRecording) return;
-      navigator.mediaDevices.getUserMedia({ audio: true })
-        .then(stream => {
-          mediaRecorder = new MediaRecorder(stream);
-          audioChunks = [];
-          mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-          mediaRecorder.start();
-          isRecording = true;
-          voiceBtn.classList.add('recording');
-          voiceBtn.textContent = '🔴';
-        })
-        .catch(err => {
-          alert('لم يتمكن من استخدام الميكروفون! تأكد من منح الإذن.');
-        });
-    }
-
-    function stopRecording() {
-      if (!isRecording) return;
-      mediaRecorder.stop();
-      isRecording = false;
-      voiceBtn.classList.remove('recording');
-      voiceBtn.textContent = '🎤';
-
-      mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-        const audioUrl = URL.createObjectURL(audioBlob);
-        socket.emit('send', { u: user.value || 'زائر', t: audioUrl, isAudio: true });
-        // لا نُغلق الرابط هنا لأنه سيُستخدم في العرض
-      };
     }
 
     function addMessage(msg, type) {
@@ -264,8 +269,7 @@ io.on('connection', (socket) => {
   });
 });
 
-// ✅ مهم: الاستماع على 0.0.0.0 والمنفذ من البيئة
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`✅ السيرفر شغال على المنفذ ${PORT}`);
+  console.log(\`✅ السيرفر شغال على المنفذ \${PORT}\`);
 });
