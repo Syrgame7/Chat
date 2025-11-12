@@ -214,15 +214,17 @@ app.get('/', (req, res) => {
 '          formData.append(\'file\', audioBlob, \'recording.webm\');' +
 
 '          try {' +
-'            const res = await fetch(\'https://www.file.io/\', { method: \'POST\', body: formData });' +
+'            const res = await fetch(\'https://tmpfiles.org/api/v1/upload\', { method: \'POST\', body: formData });' +
 '            const data = await res.json();' +
-'            if (data.success) {' +
-'              socket.emit(\'send\', { u: user.value || \'زائر\', t: data.link, isAudio: true });' +
+'            if (data.status === \'success\') {' +
+'              // تحويل الرابط إلى رابط تحميل مباشر' +
+'              const directLink = data.data.url.replace(\'https://tmpfiles.org/\', \'https://tmpfiles.org/dl/\');' +
+'              socket.emit(\'send\', { u: user.value || \'زائر\', t: directLink, isAudio: true });' +
 '            } else {' +
 '              alert(\'فشل رفع الصوت. حاول مرة أخرى.\');' +
 '            }' +
 '          } catch (err) {' +
-'            alert(\'خطأ في رفع الصوت: تأكد من اتصالك بالإنترنت.\');' +
+'            alert(\'❌ فشل في رفع الصوت. حاول مرة أخرى.\');' +
 '          }' +
 '        };' +
 '      }' +
@@ -277,6 +279,9 @@ io.on('connection', function(socket) {
     io.emit('msg', msg);
   });
 });
+
+// دالة لرفع الصوت إلى tmpfiles.org (للاستخدام من الخادم — لكننا نستخدمها من العميل)
+// لا حاجة لدالة منفصلة لأننا نستخدم fetch مباشرة في JS
 
 var PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', function() {
