@@ -18,10 +18,7 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// خدمة الملفات الثابتة
-app.use(express.static(path.join(__dirname, 'public')));
-
-// نقطة نهاية لرفع الصوت إلى Cloudinary
+// نقطة نهاية لرفع الصوت (يجب أن تكون قبل express.static)
 app.post('/upload-audio', express.raw({ type: 'application/octet-stream', limit: '10mb' }), (req, res) => {
   const filename = `audio_${Date.now()}.webm`;
   const filepath = path.join(__dirname, filename);
@@ -38,12 +35,20 @@ app.post('/upload-audio', express.raw({ type: 'application/octet-stream', limit:
 
     if (error) {
       console.error('خطأ في رفع Cloudinary:', error.message);
-      return res.status(500).json({ success: false, error: 'فشل رفع الصوت' });
+      return res.status(500).json({ success: false, error: 'فشل رفع الصوت إلى Cloudinary' });
     }
 
     // إرجاع الرابط المباشر
     res.json({ success: true, url: result.secure_url });
   });
+});
+
+// خدمة الملفات الثابتة
+app.use(express.static(path.join(__dirname, 'public')));
+
+// معالجة المسارات غير الموجودة
+app.use((req, res) => {
+  res.status(404).json({ error: 'المسار غير موجود' });
 });
 
 let messages = [];
