@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: chat
+    env: node
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: CLOUDINARY_CLOUD_NAME
+        value: "dutrr6tj2"
+      - key: CLOUDINARY_API_KEY
+        value: "276293994395546"
+      - key: CLOUDINARY_API_SECRET
+        value: "mrnmkgbhPE-A5jhFwSurmsz9mwE"
