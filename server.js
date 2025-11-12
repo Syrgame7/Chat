@@ -188,34 +188,42 @@ app.get('/', (req, res) => {
 '    let mediaRecorder;' +
 '    let audioChunks = [];' +
 
-'    voiceBtn.addEventListener(\'click\', function() {' +
+'    voiceBtn.addEventListener(\'click\', async function() {' +
 '      if (!isRecording) {' +
-'        navigator.mediaDevices.getUserMedia({ audio: true })' +
-'          .then(function(stream) {' +
-'            mediaRecorder = new MediaRecorder(stream);' +
-'            audioChunks = [];' +
-'            mediaRecorder.ondataavailable = function(e) { audioChunks.push(e.data); };' +
-'            mediaRecorder.start();' +
-'            isRecording = true;' +
-'            voiceBtn.classList.add(\'recording\');' +
-'            voiceBtn.textContent = \'🛑 إيقاف\';' +
-'            voiceBtn.title = \'انقر لإيقاف وإرسال\';' +
-'          })' +
-'          .catch(function(err) {' +
-'            alert(\'لم يتمكن من الوصول للميكروفون: \' + err.message);' +
-'          });' +
+'        try {' +
+'          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });' +
+'          mediaRecorder = new MediaRecorder(stream);' +
+'          audioChunks = [];' +
+'          mediaRecorder.ondataavailable = function(e) { audioChunks.push(e.data); };' +
+'          mediaRecorder.start();' +
+'          isRecording = true;' +
+'          voiceBtn.classList.add(\'recording\');' +
+'          voiceBtn.textContent = \'🛑 إيقاف\';' +
+'        } catch (err) {' +
+'          alert(\'لم يتمكن من الوصول للميكروفون: \' + err.message);' +
+'        }' +
 '      } else {' +
 '        mediaRecorder.stop();' +
 '        isRecording = false;' +
 '        voiceBtn.classList.remove(\'recording\');' +
 '        voiceBtn.textContent = \'🎤 تسجيل\';' +
-'        voiceBtn.title = \'انقر لبدء التسجيل\';' +
 
-'        mediaRecorder.onstop = function() {' +
+'        mediaRecorder.onstop = async function() {' +
 '          const audioBlob = new Blob(audioChunks, { type: \'audio/webm\' });' +
-'          const audioUrl = URL.createObjectURL(audioBlob);' +
-'          socket.emit(\'send\', { u: user.value || \'زائر\', t: audioUrl, isAudio: true });' +
-'          setTimeout(function() { URL.revokeObjectURL(audioUrl); }, 300000);' +
+'          const formData = new FormData();' +
+'          formData.append(\'file\', audioBlob, \'recording.webm\');' +
+
+'          try {' +
+'            const res = await fetch(\'https://www.file.io/\', { method: \'POST\', body: formData });' +
+'            const data = await res.json();' +
+'            if (data.success) {' +
+'              socket.emit(\'send\', { u: user.value || \'زائر\', t: data.link, isAudio: true });' +
+'            } else {' +
+'              alert(\'فشل رفع الصوت. حاول مرة أخرى.\');' +
+'            }' +
+'          } catch (err) {' +
+'            alert(\'خطأ في رفع الصوت: تأكد من اتصالك بالإنترنت.\');' +
+'          }' +
 '        };' +
 '      }' +
 '    });' +
