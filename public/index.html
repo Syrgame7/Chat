@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="referrer" content="no-referrer">
-  <title>دردشتي الحقيقية</title>
+  <title>دردشتي المكتملة</title>
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -143,7 +143,6 @@
       font-size: 15px;
     }
 
-    /* شريط التقدم */
     #progressContainer {
       height: 6px;
       background: #f0f0f0;
@@ -159,7 +158,6 @@
       transition: width 0.2s;
     }
 
-    /* لوحة الإيموجي */
     #emojiPanel {
       display: none;
       position: absolute;
@@ -171,6 +169,7 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.2);
       z-index: 100;
       max-width: 300px;
+      display: flex;
       flex-wrap: wrap;
       gap: 8px;
     }
@@ -184,7 +183,6 @@
       background: #f0f0f0;
     }
 
-    /* عرض المتصلين */
     .online-indicator {
       font-size: 13px;
       color: #fff;
@@ -203,11 +201,18 @@
       margin: 8px 16px 0;
       display: none;
     }
+
+    .delivery-status {
+      font-size: 12px;
+      color: #999;
+      margin-top: 4px;
+      direction: ltr;
+    }
   </style>
 </head>
 <body>
   <div class="header">
-    <span>دردشتي الحقيقية 🌐</span>
+    <span>دردشتي المكتملة 🌐</span>
     <div class="online-indicator" id="onlineCount">متصلين: 0</div>
   </div>
   
@@ -241,7 +246,6 @@
 
   <div id="emojiPanel"></div>
 
-  <!-- إيموجي شائعة -->
   <script>
     const emojiList = ['😊', '😂', '😍', '🥰', '😎', '🤩', '🥳', '😭', '😡', '👍', '👏', '💖', '💯', '🔥', '✨', '🎉', '❤️', '🫠', '🫶', '🙏', '🚀', '🌙', '🌈', '🌸'];
   </script>
@@ -253,55 +257,58 @@
     let myName = localStorage.name || prompt('ما اسمك؟') || 'زائر';
     localStorage.name = myName;
 
-    // ✅ تغيير لون الخط كل 10 ثوانٍ
-    const colors = ['#333', '#075e54', '#d32f2f', '#1976d2', '#689f38', '#f57c00', '#7b1fa2', '#00796b'];
-    let colorIndex = 0;
-    setInterval(() => {
-      const newColor = colors[colorIndex % colors.length];
-      colorIndex++;
-      document.documentElement.style.setProperty('--msg-color', newColor);
-      document.querySelectorAll('.msg').forEach(el => {
-        el.style.color = newColor;
-      });
-    }, 10000);
+    // طلب إذن الإشعارات
+    if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+      Notification.requestPermission();
+    }
 
-    // عرض لوحة الإيموجي
-    function toggleEmojiPanel() {
-      const panel = document.getElementById('emojiPanel');
-      if (panel.style.display === 'flex') {
-        panel.style.display = 'none';
-      } else {
-        panel.innerHTML = '';
-        emojiList.forEach(emoji => {
-          const span = document.createElement('span');
-          span.className = 'emoji-item';
-          span.textContent = emoji;
-          span.onclick = () => {
-            const input = document.getElementById('msg');
-            input.value += emoji;
-            input.focus();
-            panel.style.display = 'none';
-          };
-          panel.appendChild(span);
+    // أصوات بدون ملفات
+    function playSendSound() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.value = 800;
+        gain.gain.value = 0.1;
+        osc.start();
+        setTimeout(() => { osc.stop(); ctx.close(); }, 100);
+      } catch (e) {}
+    }
+
+    function playReceiveSound() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.value = 600;
+        gain.gain.value = 0.1;
+        osc.start();
+        setTimeout(() => { osc.stop(); ctx.close(); }, 150);
+      } catch (e) {}
+    }
+
+    function showNotification(name, text) {
+      if (Notification.permission === "granted") {
+        new Notification(`دردشة من ${name}`, {
+          body: text,
+          icon: "https://cdn-icons-png.flaticon.com/512/3064/3064473.png",
+          dir: "rtl"
         });
-        panel.style.display = 'flex';
       }
     }
 
-    // إغلاق لوحة الإيموجي عند النقر خارجها
-    document.addEventListener('click', (e) => {
-      const panel = document.getElementById('emojiPanel');
-      const btn = document.querySelector('.emoji-btn');
-      if (!panel.contains(e.target) && e.target !== btn) {
-        panel.style.display = 'none';
-      }
-    });
-
-    function appendMessage(name, text, isSelf, image = null) {
+    function appendMessage(name, text, isSelf, image = null, delivered = false) {
       const chat = document.getElementById(currentRoom === 'family' ? 'family-chat' : 'public-chat');
       const div = document.createElement('div');
       div.className = isSelf ? 'msg out' : 'msg in';
-      div.innerHTML = `<b>${name}:</b> ${text || ''}`;
+      const statusText = isSelf ? (delivered ? '✓✓' : '✓') : '';
+      div.innerHTML = `<b>${name}:</b> ${text || ''} ${statusText ? `<span class="delivery-status">${statusText}</span>` : ''}`;
       if (image) {
         const img = document.createElement('img');
         img.src = image;
@@ -312,17 +319,20 @@
       div.style.color = getComputedStyle(document.documentElement).getPropertyValue('--msg-color') || '#333';
       chat.appendChild(div);
       chat.scrollTop = chat.scrollHeight;
+
+      if (!isSelf) {
+        playReceiveSound();
+        if (document.hidden) {
+          showNotification(name, text || 'أرسل صورة');
+        }
+      }
     }
 
     function loadMessages(room, msgs) {
       const chat = document.getElementById(room === 'family' ? 'family-chat' : 'public-chat');
       chat.innerHTML = '';
       msgs.forEach(msg => {
-        if (msg.type === 'text') {
-          appendMessage(msg.name, msg.text, msg.name === myName);
-        } else if (msg.type === 'image') {
-          appendMessage(msg.name, '', msg.name === myName, msg.image);
-        }
+        appendMessage(msg.name, msg.text, msg.name === myName, msg.image, true);
       });
     }
 
@@ -371,7 +381,6 @@
       loadStatuses(statuses);
     });
 
-    // ✅ استقبال قائمة المتصلين
     socket.on('onlineUsers', (data) => {
       if (data.room === currentRoom) {
         document.getElementById('onlineCount').textContent = `متصلين: ${data.count}`;
@@ -384,16 +393,16 @@
     function sendText() {
       const text = document.getElementById('msg').value.trim();
       if (!text) return;
+      appendMessage(myName, text, true, null, false);
       socket.emit('sendMessage', { room: currentRoom, name: myName, text });
+      playSendSound();
       document.getElementById('msg').value = '';
     }
 
-    // ✅ شريط التقدم عند تحميل الصورة
     document.getElementById('imageUpload').addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file || !file.type.match('image/')) return;
 
-      // بدء التقدم
       const progressContainer = document.getElementById('progressContainer');
       const progressBar = document.getElementById('progressBar');
       progressContainer.style.display = 'block';
@@ -408,11 +417,11 @@
       };
 
       reader.onload = (ev) => {
-        setTimeout(() => {
-          socket.emit('sendImage', { room: currentRoom, name: myName, image: ev.target.result });
-          e.target.value = '';
-          progressContainer.style.display = 'none';
-        }, 300);
+        appendMessage(myName, '', true, ev.target.result, false);
+        socket.emit('sendImage', { room: currentRoom, name: myName, image: ev.target.result });
+        playSendSound();
+        e.target.value = '';
+        progressContainer.style.display = 'none';
       };
 
       reader.readAsDataURL(file);
@@ -427,13 +436,13 @@
 
     socket.on('receiveMessage', (data) => {
       if (data.room === currentRoom) {
-        appendMessage(data.name, data.text, data.name === myName);
+        appendMessage(data.name, data.text, data.name === myName, null, true);
       }
     });
 
     socket.on('receiveImage', (data) => {
       if (data.room === currentRoom) {
-        appendMessage(data.name, '', data.name === myName, data.image);
+        appendMessage(data.name, '', data.name === myName, data.image, true);
       }
     });
 
@@ -445,8 +454,47 @@
       feed.prepend(div);
     });
 
-    // الانضمام عند التحميل
+    // تغيير لون الخط كل 10 ثوانٍ
+    const colors = ['#333', '#075e54', '#d32f2f', '#1976d2', '#689f38', '#f57c00', '#7b1fa2', '#00796b'];
+    let colorIndex = 0;
+    setInterval(() => {
+      const newColor = colors[colorIndex % colors.length];
+      colorIndex++;
+      document.querySelectorAll('.msg').forEach(el => {
+        el.style.color = newColor;
+      });
+    }, 10000);
+
+    function toggleEmojiPanel() {
+      const panel = document.getElementById('emojiPanel');
+      if (panel.style.display === 'flex') {
+        panel.style.display = 'none';
+      } else {
+        panel.innerHTML = '';
+        emojiList.forEach(emoji => {
+          const span = document.createElement('span');
+          span.className = 'emoji-item';
+          span.textContent = emoji;
+          span.onclick = () => {
+            document.getElementById('msg').value += emoji;
+            document.getElementById('msg').focus();
+            panel.style.display = 'none';
+          };
+          panel.appendChild(span);
+        });
+        panel.style.display = 'flex';
+      }
+    }
+
+    document.addEventListener('click', (e) => {
+      const panel = document.getElementById('emojiPanel');
+      const btn = document.querySelector('.emoji-btn');
+      if (!panel.contains(e.target) && e.target !== btn) {
+        panel.style.display = 'none';
+      }
+    });
+
     joinRoom(currentRoom);
   </script>
 </body>
-  </html>
+</html>
