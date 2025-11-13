@@ -498,38 +498,47 @@
     let myName = localStorage.name || prompt('ما اسمك؟') || 'زائر';
     localStorage.name = myName;
 
-    let audioContext = null;
-    let soundsEnabled = false;
+    // --- نظام الأصوات ---
+    let soundsAllowed = false;
 
-    function initAudio() {
-      if (soundsEnabled) return;
-      try {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        soundsEnabled = true;
-      } catch (e) {}
+    // تفعيل الأصوات عند أول تفاعل
+    function enableSounds() {
+      if (!soundsAllowed) {
+        soundsAllowed = true;
+        console.log('✅ تم تفعيل الأصوات');
+      }
     }
 
-    function playTone(freq, duration = 100, volume = 0.1) {
-      if (!soundsEnabled) return;
-      try {
-        const osc = audioContext.createOscillator();
-        const gain = audioContext.createGain();
-        osc.connect(gain);
-        gain.connect(audioContext.destination);
-        osc.type = 'sine';
-        osc.frequency.value = freq;
-        gain.gain.value = volume;
-        osc.start();
-        setTimeout(() => { osc.stop(); }, duration);
-      } catch (e) {}
+    // أصوات مخصصة
+    function playSendSound() {
+      if (soundsAllowed) {
+        new Audio('/sounds/send.mp3').play().catch(e => console.log('فشل صوت الإرسال'));
+      }
     }
 
-    function playSendSound() { playTone(800, 100); }
-    function playReceiveSound() { playTone(600, 150); }
+    function playReceiveSound() {
+      if (soundsAllowed) {
+        new Audio('/sounds/receive.mp3').play().catch(e => console.log('فشل صوت الاستلام'));
+      }
+    }
 
-    document.body.addEventListener('click', initAudio, { once: true });
-    document.body.addEventListener('touchstart', initAudio, { once: true });
+    function playRecordSound() {
+      if (soundsAllowed) {
+        new Audio('/sounds/record.mp3').play().catch(e => console.log('فشل صوت التسجيل'));
+      }
+    }
 
+    function playLikeSound() {
+      if (soundsAllowed) {
+        new Audio('/sounds/like.mp3').play().catch(e => console.log('فشل صوت الإعجاب'));
+      }
+    }
+
+    // تفعيل الأصوات عند أول نقر
+    document.body.addEventListener('click', enableSounds, { once: true });
+    document.body.addEventListener('touchstart', enableSounds, { once: true });
+
+    // --- الإشعارات الداخلية ---
     const unreadCounts = { family: 0, public: 0 };
 
     function showInAppNotification(name, text, room) {
@@ -551,6 +560,7 @@
       }
     }
 
+    // --- عرض الرسالة ---
     function appendMessage(name, text, isSelf, image = null, audio = null) {
       const chat = document.getElementById(currentRoom === 'family' ? 'family-chat' : 'public-chat');
       const div = document.createElement('div');
@@ -592,6 +602,7 @@
       }
     }
 
+    // --- تحميل الرسائل ---
     function loadMessages(room, msgs) {
       const chat = document.getElementById(room === 'family' ? 'family-chat' : 'public-chat');
       chat.innerHTML = '';
@@ -606,6 +617,7 @@
       });
     }
 
+    // --- تحميل الحالات ---
     function loadStatuses(statuses) {
       const feed = document.getElementById('statusFeed');
       feed.innerHTML = '';
@@ -617,6 +629,7 @@
       });
     }
 
+    // --- المنشورات ---
     let posts = [];
 
     function renderPosts() {
@@ -690,6 +703,7 @@
 
     function likePost(id) {
       socket.emit('likePost', id);
+      playLikeSound();
     }
 
     function toggleComments(id) {
@@ -795,6 +809,7 @@
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         voiceBtn.classList.add('recording');
         voiceBtn.innerHTML = '🎙️';
+        playRecordSound();
 
         const mediaRecorder = new MediaRecorder(stream);
         const chunks = [];
@@ -950,4 +965,4 @@
     joinRoom(currentRoom);
   </script>
 </body>
-      </html>
+  </html>
