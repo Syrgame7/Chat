@@ -66,6 +66,38 @@
       50% { background-position: 100% 50%; }
       100% { background-position: 0% 50%; }
     }
+
+    /* خلفية فضائية */
+    .posts {
+      background: #000;
+      position: relative;
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .stars {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+    .star {
+      position: absolute;
+      background: white;
+      border-radius: 50%;
+      animation: twinkle 3s infinite ease-in-out;
+    }
+    @keyframes twinkle {
+      0% { opacity: 0.3; }
+      50% { opacity: 1; }
+      100% { opacity: 0.3; }
+    }
+
     .msg {
       max-width: 75%;
       padding: 10px;
@@ -81,14 +113,6 @@
       display: flex;
       align-items: flex-start;
       gap: 8px;
-    }
-    .avatar {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 1px solid #25D366;
-      margin-top: 2px;
     }
     .msg-text {
       flex: 1;
@@ -273,28 +297,105 @@
       to { transform: translateY(0); opacity: 1; }
     }
 
-    .user-avatar-header {
-      width: 32px;
-      height: 32px;
+    /* منشورات */
+    .post {
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .post-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .post-avatar {
+      width: 28px;
+      height: 28px;
       border-radius: 50%;
-      overflow: hidden;
+      background: #4a5568;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #cbd5e0;
+      font-weight: bold;
+      font-size: 12px;
+    }
+    .post-name {
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .post-text {
+      margin: 8px 0;
+      line-height: 1.4;
+      font-size: 14px;
+    }
+    .post-image {
+      width: 100%;
+      border-radius: 8px;
+      margin: 8px 0;
+      object-fit: cover;
+    }
+    .post-actions {
+      display: flex;
+      gap: 12px;
+      font-size: 12px;
+      color: #a0aec0;
+      margin-top: 8px;
+    }
+    .post-like {
       cursor: pointer;
     }
-    .user-avatar-header img {
+    .post-comment {
+      cursor: pointer;
+    }
+
+    /* نموذج نشر منشور */
+    .post-form {
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      padding: 12px;
+      margin: 12px 0;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .post-form textarea {
       width: 100%;
-      height: 100%;
-      object-fit: cover;
+      padding: 8px;
+      border: none;
+      background: rgba(0,0,0,0.3);
+      border-radius: 8px;
+      font-size: 13px;
+      color: white;
+      resize: none;
+      min-height: 60px;
+      margin-bottom: 8px;
+    }
+    .post-form .upload-btn {
+      background: #5c677d;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      cursor: pointer;
+      margin-right: 8px;
+    }
+    .post-form button {
+      background: #075e54;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      cursor: pointer;
+      border: none;
     }
   </style>
 </head>
 <body>
   <div class="header">
-    <div style="display:flex;align-items:center;gap:10px;">
-      <div class="user-avatar-header" onclick="changeAvatar()">
-        <img id="userAvatar" src="" alt="أنا" />
-      </div>
-      <span>دردشتي</span>
-    </div>
+    <span>دردشتي</span>
     <div class="online-indicator" id="onlineCount">متصلين: 0</div>
   </div>
   
@@ -302,6 +403,7 @@
     <div class="tab active" data-room="family">عائلة</div>
     <div class="tab" data-room="public">عامة</div>
     <div class="tab" data-room="status">حالات</div>
+    <div class="tab" data-room="posts">منشورات</div>
   </div>
 
   <div id="family-chat" class="chat"></div>
@@ -310,6 +412,17 @@
     <input type="text" id="statusText" placeholder="اكتب حالتك..." />
     <button onclick="postStatus()" style="margin:8px auto; display:block; padding:6px 16px; background:#075e54; color:white; border:none; border-radius:6px; font-size:13px;">نشر الحالة</button>
     <div id="statusFeed"></div>
+  </div>
+
+  <div id="posts-section" class="posts" style="display:none;">
+    <div class="stars" id="stars"></div>
+    <div class="post-form">
+      <textarea id="postText" placeholder="اكتب شرح المنشور..."></textarea>
+      <input type="file" id="postImage" accept="image/*" style="display:none;" />
+      <button class="upload-btn" onclick="document.getElementById('postImage').click()">📎 صورة</button>
+      <button onclick="publishPost()">نشر المنشور</button>
+    </div>
+    <div id="postsFeed"></div>
   </div>
 
   <div class="online-list" id="onlineList"></div>
@@ -345,14 +458,6 @@
     let myName = localStorage.name || prompt('ما اسمك؟') || 'زائر';
     localStorage.name = myName;
 
-    // تحميل الصورة الشخصية
-    let myAvatar = localStorage.getItem('userAvatar') || null;
-    if (!myAvatar) {
-      myAvatar = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMCIgaGVpZ2h0PSIzMCIgdmlld0JveD0iMCAwIDI0IDI0Ij48Y2lyY2xlIGN4PSIxMiIgY3k9IjgiIHI9IjUiIGZpbGw9IiM5NTk1OTUiLz48cGF0aCBkPSJNMjAgMjJINGEwIDEgMCAwIDEtMS0xdi0yYTUgNSAwIDAgMTE1LTVoOGE1IDUgMCAwIDE1IDV2MmExIDEgMCAwIDEtMSAxeiIgZmlsbD0iIzk1OTU5NSIvPjwvc3ZnPg==';
-      localStorage.setItem('userAvatar', myAvatar);
-    }
-    document.getElementById('userAvatar').src = myAvatar;
-
     // نظام الصوت
     let audioContext = null;
     let soundsEnabled = false;
@@ -386,17 +491,6 @@
     document.body.addEventListener('click', initAudio, { once: true });
     document.body.addEventListener('touchstart', initAudio, { once: true });
 
-    // التأكد من وجود غرفة
-    function ensureCurrentRoom() {
-      if (!currentRoom) {
-        currentRoom = 'family';
-        const tab = document.querySelector('.tab[data-room="family"]');
-        if (tab) {
-          tab.click();
-        }
-      }
-    }
-
     // الإشعارات الداخلية
     const unreadCounts = { family: 0, public: 0 };
 
@@ -420,13 +514,10 @@
     }
 
     // عرض الرسالة
-    function appendMessage(name, text, isSelf, image = null, audio = null, senderAvatar = null) {
+    function appendMessage(name, text, isSelf, image = null, audio = null) {
       const chat = document.getElementById(currentRoom === 'family' ? 'family-chat' : 'public-chat');
       const div = document.createElement('div');
       div.className = isSelf ? 'msg out' : 'msg in';
-
-      const avatarSrc = senderAvatar || 
-        'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI0IDI0Ij48Y2lyY2xlIGN4PSIxMiIgY3k9IjgiIHI9IjUiIGZpbGw9IiM5NTk1OTUiLz48cGF0aCBkPSJNMjAgMjJINGEwIDEgMCAwIDEtMS0xdi0yYTUgNSAwIDAgMTE1LTVoOGE1IDUgMCAwIDE1IDV2MmExIDEgMCAwIDEtMSAxeiIgZmlsbD0iIzk1OTU5NSIvPjwvc3ZnPg==';
 
       let mediaHtml = '';
       if (image) {
@@ -439,7 +530,6 @@
 
       div.innerHTML = `
         <div class="msg-content">
-          <img src="${avatarSrc}" class="avatar" />
           <div class="msg-text">
             <b>${name}:</b>
             ${text || ''}
@@ -462,11 +552,11 @@
       chat.innerHTML = '';
       msgs.forEach(msg => {
         if (msg.type === 'text') {
-          appendMessage(msg.name, msg.text, msg.name === myName, null, null, msg.avatar);
+          appendMessage(msg.name, msg.text, msg.name === myName, null, null);
         } else if (msg.type === 'image') {
-          appendMessage(msg.name, '', msg.name === myName, msg.image, null, msg.avatar);
+          appendMessage(msg.name, '', msg.name === myName, msg.image, null);
         } else if (msg.type === 'audio') {
-          appendMessage(msg.name, '', msg.name === myName, null, msg.audio, msg.avatar);
+          appendMessage(msg.name, '', msg.name === myName, null, msg.audio);
         }
       });
     }
@@ -482,8 +572,56 @@
       });
     }
 
+    // منشورات
+    const posts = [];
+
+    function renderPosts() {
+      const feed = document.getElementById('postsFeed');
+      feed.innerHTML = '';
+      posts.slice().reverse().forEach(post => {
+        const div = document.createElement('div');
+        div.className = 'post';
+        div.innerHTML = `
+          <div class="post-header">
+            <div class="post-avatar">${post.name.charAt(0)}</div>
+            <div class="post-name">${post.name}</div>
+          </div>
+          <div class="post-text">${post.text}</div>
+          ${post.image ? `<img class="post-image" src="${post.image}" />` : ''}
+          <div class="post-actions">
+            <span class="post-like">👍 ${post.likes || 0}</span>
+            <span class="post-comment">💬 0</span>
+          </div>
+        `;
+        feed.appendChild(div);
+      });
+    }
+
+    function publishPost() {
+      const text = document.getElementById('postText').value.trim();
+      const file = document.getElementById('postImage').files[0];
+      
+      if (!text && !file) {
+        alert('يجب كتابة شرح أو اختيار صورة');
+        return;
+      }
+
+      const post = {
+        name: myName,
+        text: text,
+        image: file ? URL.createObjectURL(file) : null,
+        time: Date.now(),
+        likes: 0
+      };
+
+      posts.push(post);
+      renderPosts();
+      document.getElementById('postText').value = '';
+      document.getElementById('postImage').value = '';
+    }
+
     function joinRoom(room) {
-      socket.emit('joinRoom', { room, name: myName, avatar: myAvatar });
+      socket.emit('joinRoom', { room, name: myName });
     }
 
     document.querySelectorAll('.tab').forEach(tab => {
@@ -495,14 +633,17 @@
         document.getElementById('family-chat').style.display = currentRoom === 'family' ? 'flex' : 'none';
         document.getElementById('public-chat').style.display = currentRoom === 'public' ? 'flex' : 'none';
         document.getElementById('status-section').style.display = currentRoom === 'status' ? 'block' : 'none';
-        document.getElementById('main-input').style.display = currentRoom === 'status' ? 'none' : 'flex';
-        document.getElementById('onlineList').style.display = currentRoom === 'status' ? 'none' : 'block';
+        document.getElementById('posts-section').style.display = currentRoom === 'posts' ? 'flex' : 'none';
+        document.getElementById('main-input').style.display = currentRoom === 'status' || currentRoom === 'posts' ? 'none' : 'flex';
+        document.getElementById('onlineList').style.display = currentRoom === 'status' || currentRoom === 'posts' ? 'none' : 'block';
 
-        if (currentRoom !== 'status') {
+        if (currentRoom !== 'status' && currentRoom !== 'posts') {
           unreadCounts[currentRoom] = 0;
           const baseName = currentRoom === 'family' ? 'عائلة' : 'عامة';
           tab.textContent = baseName;
           joinRoom(currentRoom);
+        } else if (currentRoom === 'posts') {
+          renderPosts();
         } else {
           socket.emit('loadStatuses', []);
         }
@@ -524,19 +665,7 @@
       }
     });
 
-    socket.on('userAvatarUpdate', (data) => {
-      localStorage.setItem(`avatar_${data.name}`, data.avatar);
-      // تحديث الرسائل الحالية
-      document.querySelectorAll('.msg-text b').forEach(el => {
-        if (el.textContent.trim() === data.name + ':') {
-          const avatarImg = el.closest('.msg-content').querySelector('.avatar');
-          if (avatarImg) avatarImg.src = data.avatar;
-        }
-      });
-    });
-
     function sendText() {
-      ensureCurrentRoom();
       const text = document.getElementById('msg').value.trim();
       if (!text) return;
       socket.emit('sendMessage', { room: currentRoom, name: myName, text });
@@ -545,7 +674,6 @@
     }
 
     document.getElementById('imageUpload').addEventListener('change', (e) => {
-      ensureCurrentRoom();
       const file = e.target.files[0];
       if (!file || !file.type.match('image/')) return;
 
@@ -573,7 +701,6 @@
     });
 
     async function recordAudio() {
-      ensureCurrentRoom();
       const voiceBtn = document.querySelector('.voice-btn');
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -621,7 +748,7 @@
     socket.on('receiveMessage', (data) => {
       const isSelf = data.name === myName;
       if (data.room === currentRoom) {
-        appendMessage(data.name, data.text, isSelf, null, null, data.avatar);
+        appendMessage(data.name, data.text, isSelf, null, null);
       } else {
         showInAppNotification(data.name, data.text, data.room);
       }
@@ -630,7 +757,7 @@
     socket.on('receiveImage', (data) => {
       const isSelf = data.name === myName;
       if (data.room === currentRoom) {
-        appendMessage(data.name, '', isSelf, data.image, null, data.avatar);
+        appendMessage(data.name, '', isSelf, data.image, null);
       } else {
         showInAppNotification(data.name, 'أرسل صورة', data.room);
       }
@@ -639,7 +766,7 @@
     socket.on('receiveAudio', (data) => {
       const isSelf = data.name === myName;
       if (data.room === currentRoom) {
-        appendMessage(data.name, '', isSelf, null, data.audio, data.avatar);
+        appendMessage(data.name, '', isSelf, null, data.audio);
       } else {
         showInAppNotification(data.name, 'أرسل رسالة صوتية', data.room);
       }
@@ -706,27 +833,29 @@
       }
     });
 
-    // تغيير الصورة الشخصية
-    function changeAvatar() {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = 'image/*';
-      input.onchange = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-          myAvatar = ev.target.result;
-          localStorage.setItem('userAvatar', myAvatar);
-          document.getElementById('userAvatar').src = myAvatar;
-          socket.emit('updateAvatar', { avatar: myAvatar });
-        };
-        reader.readAsDataURL(file);
-      };
-      input.click();
+    // خلفية فضائية
+    function createStars() {
+      const starsContainer = document.getElementById('stars');
+      starsContainer.innerHTML = '';
+      for (let i = 0; i < 100; i++) {
+        const star = document.createElement('div');
+        star.className = 'star';
+        star.style.width = Math.random() * 2 + 1 + 'px';
+        star.style.height = star.style.width;
+        star.style.left = Math.random() * 100 + '%';
+        star.style.top = Math.random() * 100 + '%';
+        star.style.animationDuration = Math.random() * 3 + 2 + 's';
+        starsContainer.appendChild(star);
+      }
     }
+
+    // توليد النجوم عند التحميل
+    createStars();
+
+    // إعادة توليد النجوم عند تغيير الحجم
+    window.addEventListener('resize', createStars);
 
     joinRoom(currentRoom);
   </script>
 </body>
-        </html>
+  </html>
