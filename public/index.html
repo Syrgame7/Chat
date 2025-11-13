@@ -82,15 +82,9 @@
       100% { opacity: 0.3; }
     }
 
-    .chat {
-      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-      background-size: 400% 400%;
-      animation: gradientBG 15s ease infinite;
-    }
-    @keyframes gradientBG {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
+    /* ✅ الخلفية الآن سوداء بحتة — بدون أي gradient */
+    .chat, .posts {
+      background: #000;
     }
 
     .msg {
@@ -293,10 +287,6 @@
     }
 
     /* منشورات */
-    .posts {
-      background: #000;
-      position: relative;
-    }
     .post {
       background: rgba(255,255,255,0.05);
       border-radius: 12px;
@@ -518,7 +508,6 @@
     let myName = localStorage.name || prompt('ما اسمك؟') || 'زائر';
     localStorage.name = myName;
 
-    // نظام الصوت
     let audioContext = null;
     let soundsEnabled = false;
 
@@ -551,7 +540,6 @@
     document.body.addEventListener('click', initAudio, { once: true });
     document.body.addEventListener('touchstart', initAudio, { once: true });
 
-    // الإشعارات الداخلية
     const unreadCounts = { family: 0, public: 0 };
 
     function showInAppNotification(name, text, room) {
@@ -573,7 +561,6 @@
       }
     }
 
-    // عرض الرسالة
     function appendMessage(name, text, isSelf, image = null, audio = null) {
       const chat = document.getElementById(currentRoom === 'family' ? 'family-chat' : 'public-chat');
       const div = document.createElement('div');
@@ -632,7 +619,6 @@
       });
     }
 
-    // منشورات
     let posts = [];
 
     function renderPosts() {
@@ -887,7 +873,6 @@
       feed.prepend(div);
     });
 
-    // تغيير لون الفقاعات كل 15 ثانية
     const bubbleColors = [
       { in: '#2c2c3e', out: '#1e3a5f' },
       { in: '#2d3748', out: '#2b6cb0' },
@@ -910,7 +895,6 @@
       document.querySelectorAll('.msg.out').forEach(el => el.style.backgroundColor = colors.out);
     }, 15000);
 
-    // لوحة الإيموجي
     function toggleEmojiPanel() {
       const panel = document.getElementById('emojiPanel');
       if (panel.style.display === 'flex') {
@@ -940,7 +924,6 @@
       }
     });
 
-    // خلفية النجوم في كل قسم
     function createStars(containerId) {
       const starsContainer = document.getElementById(containerId);
       starsContainer.innerHTML = '';
@@ -956,13 +939,11 @@
       }
     }
 
-    // توليد النجوم عند التحميل
     createStars('stars-family');
     createStars('stars-public');
     createStars('stars-status');
     createStars('stars-posts');
 
-    // إعادة توليد النجوم عند تغيير الحجم
     window.addEventListener('resize', () => {
       createStars('stars-family');
       createStars('stars-public');
@@ -970,7 +951,6 @@
       createStars('stars-posts');
     });
 
-    // استقبال المنشورات
     socket.on('allPosts', (allPosts) => {
       posts = allPosts;
       renderPosts();
