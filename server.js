@@ -12,98 +12,98 @@ const io = socketIo(server, {
   }
 });
 
-// تخزين الرسائل: نصوص، صور، صوتيات، حالات
+// تخزين الرسائل + معلومات المستخدمين (بما في ذلك الصورة الشخصية)
 const messages = {
   family: [],
   public: [],
-  status: []
 };
+const statuses = [];
 
-// تتبع المستخدمين المتصلين في كل غرفة
-const users = {
-  family: {},
-  public: {}
-};
+// تتبع المستخدمين: { socketId: { name, avatar, room } }
+const users = {};
 
-// خدمة الملفات الثابتة (HTML, CSS, JS)
 app.use(express.static(path.join(__dirname, 'public')));
 
-// الصفحة الرئيسية
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// اتصال عميل جديد
 io.on('connection', (socket) => {
-  let currentRoom = null;
-  let userName = null;
-
-  // الانضمام إلى غرفة
   socket.on('joinRoom', (data) => {
-    const { room, name } = data;
-    userName = name;
-    currentRoom = room;
-
+    const { room, name, avatar } = data;
+    
+    // تحديث بيانات المستخدم
+    users[socket.id] = { name, avatar, room };
     socket.join(room);
-    users[room][socket.id] = name;
 
-    // إرسال الرسائل المحفوظة (نصوص، صور، صوتيات)
+    // إرسال الرسائل السابقة
     socket.emit('loadMessages', { room, messages: messages[room] || [] });
+    socket.emit('loadStatuses', statuses);
+
+    // إرسال تحديث الصورة الشخصية لجميع المستخدمين
+    socket.to(room).emit('userAvatarUpdate', { socketId: socket.id, name, avatar });
 
     // تحديث قائمة المتصلين
     updateOnlineUsers(room);
   });
 
-  // تحميل الحالات
-  socket.on('loadStatuses', () => {
-    socket.emit('allStatuses', messages.status);
-  });
-
-  // إرسال رسالة نصية
   socket.on('sendMessage', (data) => {
     const msg = { ...data, type: 'text', time: Date.now() };
     messages[data.room].push(msg);
-    io.to(data.room).emit('receiveMessage', data);
+    io.to(data.room).emit('receiveMessage', { ...data, avatar: users[socket.id]?.avatar });
   });
 
-  // إرسال صورة
   socket.on('sendImage', (data) => {
     const msg = { ...data, type: 'image', time: Date.now() };
     messages[data.room].push(msg);
-    io.to(data.room).emit('receiveImage', data);
+    io.to(data.room).emit('receiveImage', { ...data, avatar: users[socket.id]?.avatar });
   });
 
-  // ✅ إرسال رسالة صوتية
   socket.on('sendAudio', (data) => {
     const msg = { ...data, type: 'audio', time: Date.now() };
     messages[data.room].push(msg);
-    io.to(data.room).emit('receiveAudio', data);
+    io.to(data.room).emit('receiveAudio', { ...data, avatar: users[socket.id]?.avatar });
   });
 
-  // نشر حالة
   socket.on('postStatus', (data) => {
-    const status = { ...data, type: 'status', time: Date.now() };
-    messages.status.push(status);
+    const status = { ...data, time: Date.now() };
+    statuses.push(status);
     io.emit('newStatus', data);
   });
 
-  // عند انفصال المستخدم
-  socket.on('disconnect', () => {
-    if (currentRoom && users[currentRoom]) {
-      delete users[currentRoom][socket.id];
-      updateOnlineUsers(currentRoom);
+  socket.on('updateAvatar', (data) => {
+    if (users[socket.id]) {
+      users[socket.id].avatar = data.avatar;
+      const room = users[socket.id].room;
+      // إبلاغ الجميع في الغرفة
+      io.to(room).emit('userAvatarUpdate', { 
+        socketId: socket.id, 
+        name: users[socket.id].name, 
+        avatar: data.avatar 
+      });
     }
   });
 
-  // دالة تحديث قائمة المتصلين
+  socket.on('disconnect', () => {
+    const user = users[socket.id];
+    if (user) {
+      delete users[socket.id];
+      updateOnlineUsers(user.room);
+    }
+  });
+
   function updateOnlineUsers(room) {
-    const userList = Object.values(users[room] || {});
-    io.to(room).emit('onlineUsers', { room, users: userList, count: userList.length });
+    const roomUsers = Object.values(users).filter(u => u.room === room);
+    const userList = roomUsers.map(u => u.name);
+    io.to(room).emit('onlineUsers', { 
+      room, 
+      users: userList, 
+      count: userList.length 
+    });
   }
 });
 
-// تشغيل الخادم
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`✅ الخادم يعمل على المنفذ ${PORT}`);
+  console.log(`✅ يعمل على المنفذ ${PORT}`);
 });
