@@ -2,9 +2,9 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
   <meta name="referrer" content="no-referrer">
-  <title>دردشتي المكتملة</title>
+  <title>دردشتي</title>
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -15,6 +15,7 @@
       display: flex;
       flex-direction: column;
       color: #333;
+      overscroll-behavior: none;
     }
     .header {
       background: #075e54;
@@ -62,7 +63,6 @@
       border-radius: 16px;
       word-wrap: break-word;
       box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-      transition: color 0.3s;
     }
     .in { background: #fff; align-self: flex-start; border-bottom-left-radius: 4px; }
     .out { background: #dcf8c6; align-self: flex-end; border-bottom-right-radius: 4px; }
@@ -103,9 +103,6 @@
       cursor: pointer;
       transition: background 0.2s;
     }
-    .input-area button:hover {
-      background: #064a43;
-    }
     .attach-btn, .emoji-btn {
       background: #6c757d;
       width: 40px;
@@ -120,10 +117,6 @@
       color: white;
       transition: background 0.2s;
     }
-    .attach-btn:hover, .emoji-btn:hover {
-      background: #5a6268;
-    }
-
     .status-preview {
       max-width: 80%;
       margin: 12px auto;
@@ -142,7 +135,6 @@
       font-family: 'Tajawal', sans-serif;
       font-size: 15px;
     }
-
     #progressContainer {
       height: 6px;
       background: #f0f0f0;
@@ -157,7 +149,6 @@
       width: 0%;
       transition: width 0.2s;
     }
-
     #emojiPanel {
       display: none;
       position: absolute;
@@ -179,10 +170,6 @@
       padding: 4px;
       border-radius: 6px;
     }
-    .emoji-item:hover {
-      background: #f0f0f0;
-    }
-
     .online-indicator {
       font-size: 13px;
       color: #fff;
@@ -191,7 +178,6 @@
       border-radius: 20px;
       margin-left: 10px;
     }
-
     .online-list {
       font-size: 12px;
       color: #333;
@@ -201,18 +187,40 @@
       margin: 8px 16px 0;
       display: none;
     }
-
     .delivery-status {
       font-size: 12px;
       color: #999;
       margin-top: 4px;
       direction: ltr;
     }
+
+    /* فقاعة الإشعار الداخلية */
+    #inAppNotification {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      background: #075e54;
+      color: white;
+      padding: 12px 16px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 1000;
+      max-width: 280px;
+      display: none;
+      font-family: 'Tajawal', sans-serif;
+      direction: rtl;
+      animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateY(100px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
   </style>
 </head>
 <body>
   <div class="header">
-    <span>دردشتي المكتملة 🌐</span>
+    <span>دردشتي</span>
     <div class="online-indicator" id="onlineCount">متصلين: 0</div>
   </div>
   
@@ -234,7 +242,7 @@
 
   <div class="input-area" id="main-input">
     <input type="text" id="msg" placeholder="اكتب رسالة..." onkeypress="if(event.key==='Enter') sendText()" />
-    <input type="file" id="imageUpload" accept="image/*,.gif" style="display:none;" />
+    <input type="file" id="imageUpload" accept="image/*" style="display:none;" />
     <button class="attach-btn" onclick="document.getElementById('imageUpload').click()">📎</button>
     <button class="emoji-btn" onclick="toggleEmojiPanel()">😊</button>
     <button onclick="sendText()">إرسال</button>
@@ -246,8 +254,14 @@
 
   <div id="emojiPanel"></div>
 
+  <!-- فقاعة الإشعار الداخلية -->
+  <div id="inAppNotification">
+    <b id="notifName"></b><br>
+    <span id="notifText"></span>
+  </div>
+
   <script>
-    const emojiList = ['😊', '😂', '😍', '🥰', '😎', '🤩', '🥳', '😭', '😡', '👍', '👏', '💖', '💯', '🔥', '✨', '🎉', '❤️', '🫠', '🫶', '🙏', '🚀', '🌙', '🌈', '🌸'];
+    const emojiList = ['😊', '😂', '😍', '🥰', '😎', '🤩', '🥳', '😭', '😡', '👍', '👏', '💖', '💯', '🔥', '✨', '🎉', '❤️', '🫠', '🫶', '🙏'];
   </script>
 
   <script src="/socket.io/socket.io.js"></script>
@@ -257,49 +271,60 @@
     let myName = localStorage.name || prompt('ما اسمك؟') || 'زائر';
     localStorage.name = myName;
 
-    // طلب إذن الإشعارات
-    if (Notification.permission !== "granted" && Notification.permission !== "denied") {
-      Notification.requestPermission();
-    }
+    // نظام الصوت الآمن لـ WebView
+    let audioContext = null;
+    let soundsEnabled = false;
 
-    // أصوات بدون ملفات
-    function playSendSound() {
+    function initAudio() {
+      if (soundsEnabled) return;
       try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.type = 'sine';
-        osc.frequency.value = 800;
-        gain.gain.value = 0.1;
-        osc.start();
-        setTimeout(() => { osc.stop(); ctx.close(); }, 100);
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        soundsEnabled = true;
       } catch (e) {}
     }
 
-    function playReceiveSound() {
+    function playTone(freq, duration = 100, volume = 0.1) {
+      if (!soundsEnabled) return;
       try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
         osc.connect(gain);
-        gain.connect(ctx.destination);
+        gain.connect(audioContext.destination);
         osc.type = 'sine';
-        osc.frequency.value = 600;
-        gain.gain.value = 0.1;
+        osc.frequency.value = freq;
+        gain.gain.value = volume;
         osc.start();
-        setTimeout(() => { osc.stop(); ctx.close(); }, 150);
+        setTimeout(() => { osc.stop(); }, duration);
       } catch (e) {}
     }
 
-    function showNotification(name, text) {
-      if (Notification.permission === "granted") {
-        new Notification(`دردشة من ${name}`, {
-          body: text,
-          icon: "https://cdn-icons-png.flaticon.com/512/3064/3064473.png",
-          dir: "rtl"
-        });
+    function playSendSound() { playTone(800, 100); }
+    function playReceiveSound() { playTone(600, 150); }
+
+    document.body.addEventListener('click', initAudio, { once: true });
+    document.body.addEventListener('touchstart', initAudio, { once: true });
+
+    // نظام الإشعارات الداخلية
+    const unreadCounts = { family: 0, public: 0 };
+
+    function showInAppNotification(name, text, room) {
+      if (currentRoom !== room) {
+        unreadCounts[room]++;
+
+        // تحديث اسم التبويب
+        const tab = document.querySelector(`.tab[data-room="${room}"]`);
+        const baseName = room === 'family' ? 'عائلة' : 'عامة';
+        tab.textContent = `${baseName} (${unreadCounts[room]})`;
+
+        // عرض الفقاعة
+        const notif = document.getElementById('inAppNotification');
+        document.getElementById('notifName').textContent = name;
+        document.getElementById('notifText').textContent = text || 'أرسل صورة';
+        notif.style.display = 'block';
+
+        setTimeout(() => {
+          notif.style.display = 'none';
+        }, 4000);
       }
     }
 
@@ -312,19 +337,14 @@
       if (image) {
         const img = document.createElement('img');
         img.src = image;
-        img.alt = "صورة";
         div.appendChild(document.createElement('br'));
         div.appendChild(img);
       }
-      div.style.color = getComputedStyle(document.documentElement).getPropertyValue('--msg-color') || '#333';
       chat.appendChild(div);
       chat.scrollTop = chat.scrollHeight;
 
       if (!isSelf) {
         playReceiveSound();
-        if (document.hidden) {
-          showNotification(name, text || 'أرسل صورة');
-        }
       }
     }
 
@@ -363,6 +383,13 @@
         document.getElementById('main-input').style.display = currentRoom === 'status' ? 'none' : 'flex';
         document.getElementById('onlineList').style.display = currentRoom === 'status' ? 'none' : 'block';
 
+        // مسح العداد عند الدخول
+        if (currentRoom !== 'status') {
+          unreadCounts[currentRoom] = 0;
+          const baseName = currentRoom === 'family' ? 'عائلة' : 'عامة';
+          tab.textContent = baseName;
+        }
+
         if (currentRoom !== 'status') {
           joinRoom(currentRoom);
         } else {
@@ -372,14 +399,10 @@
     });
 
     socket.on('loadMessages', (data) => {
-      if (data.room === currentRoom) {
-        loadMessages(data.room, data.messages);
-      }
+      if (data.room === currentRoom) loadMessages(data.room, data.messages);
     });
 
-    socket.on('allStatuses', (statuses) => {
-      loadStatuses(statuses);
-    });
+    socket.on('allStatuses', (statuses) => loadStatuses(statuses));
 
     socket.on('onlineUsers', (data) => {
       if (data.room === currentRoom) {
@@ -437,12 +460,16 @@
     socket.on('receiveMessage', (data) => {
       if (data.room === currentRoom) {
         appendMessage(data.name, data.text, data.name === myName, null, true);
+      } else {
+        showInAppNotification(data.name, data.text, data.room);
       }
     });
 
     socket.on('receiveImage', (data) => {
       if (data.room === currentRoom) {
         appendMessage(data.name, '', data.name === myName, data.image, true);
+      } else {
+        showInAppNotification(data.name, 'أرسل صورة', data.room);
       }
     });
 
@@ -454,7 +481,6 @@
       feed.prepend(div);
     });
 
-    // تغيير لون الخط كل 10 ثوانٍ
     const colors = ['#333', '#075e54', '#d32f2f', '#1976d2', '#689f38', '#f57c00', '#7b1fa2', '#00796b'];
     let colorIndex = 0;
     setInterval(() => {
@@ -497,4 +523,4 @@
     joinRoom(currentRoom);
   </script>
 </body>
-</html>
+                            </html>
