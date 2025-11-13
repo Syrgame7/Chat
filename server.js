@@ -1,3 +1,5 @@
+// server.js (محدّث)
+
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
@@ -12,14 +14,19 @@ const io = socketIo(server, {
   }
 });
 
-// ✅ تخزين مؤقت للرسائل والصور والحالات في الذاكرة
+// تخزين الرسائل
 const messages = {
   family: [],
   public: [],
   status: []
 };
 
-// خدمة الملفات الثابتة
+// ✅ تتبع المستخدمين المتصلين في كل غرفة
+const users = {
+  family: {},
+  public: {}
+};
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/', (req, res) => {
@@ -27,43 +34,64 @@ app.get('/', (req, res) => {
 });
 
 io.on('connection', (socket) => {
-  console.log('اتصال جديد:', socket.id);
+  let currentRoom = null;
+  let userName = null;
 
-  // الانضمام إلى غرفة وطلب تحميل الرسائل
-  socket.on('joinRoom', (room) => {
+  // عند انضمام المستخدم
+  socket.on('joinRoom', (data) => {
+    const { room, name } = data;
+    userName = name;
+    currentRoom = room;
+
+    // مغادرة الغرفة القديمة إن وُجدت
+    if (socket.rooms.has(room)) socket.leave(room);
+
+    // الانضمام للغرفة الجديدة
     socket.join(room);
+    users[room][socket.id] = name;
+
+    // إرسال الرسائل القديمة
     socket.emit('loadMessages', { room, messages: messages[room] || [] });
+
+    // تحديث قائمة المتصلين
+    updateOnlineUsers(room);
   });
 
-  // تحميل جميع الحالات
   socket.on('loadStatuses', () => {
     socket.emit('allStatuses', messages.status);
   });
 
-  // إرسال رسالة نصية
   socket.on('sendMessage', (data) => {
     const msg = { ...data, type: 'text', time: Date.now() };
     messages[data.room].push(msg);
     io.to(data.room).emit('receiveMessage', data);
   });
 
-  // إرسال صورة
   socket.on('sendImage', (data) => {
     const msg = { ...data, type: 'image', time: Date.now() };
     messages[data.room].push(msg);
     io.to(data.room).emit('receiveImage', data);
   });
 
-  // نشر حالة
   socket.on('postStatus', (data) => {
     const status = { ...data, type: 'status', time: Date.now() };
     messages.status.push(status);
     io.emit('newStatus', data);
   });
 
+  // ✅ عند الانفصال
   socket.on('disconnect', () => {
-    console.log('انفصال:', socket.id);
+    if (currentRoom && users[currentRoom]) {
+      delete users[currentRoom][socket.id];
+      updateOnlineUsers(currentRoom);
+    }
   });
+
+  // دالة تحديث المتصلين
+  function updateOnlineUsers(room) {
+    const userList = Object.values(users[room] || {});
+    io.to(room).emit('onlineUsers', { room, users: userList, count: userList.length });
+  }
 });
 
 const PORT = process.env.PORT || 3000;
