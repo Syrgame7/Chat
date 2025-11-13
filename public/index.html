@@ -20,13 +20,13 @@
     .header {
       background: rgba(7, 94, 84, 0.95);
       color: white;
-      padding: 12px 16px;
+      padding: 10px 12px;
       text-align: center;
       font-weight: bold;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
     .tabs {
       display: flex;
@@ -36,12 +36,13 @@
     }
     .tab {
       flex: 1;
-      padding: 14px 0;
+      padding: 12px 0;
       text-align: center;
       cursor: pointer;
       color: rgba(255,255,255,0.8);
       transition: color 0.2s;
       font-weight: 500;
+      font-size: 14px;
     }
     .tab:hover { color: white; }
     .tab.active {
@@ -55,10 +56,10 @@
       animation: gradientBG 15s ease infinite;
       flex: 1;
       overflow-y: auto;
-      padding: 16px;
+      padding: 12px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 12px;
     }
     @keyframes gradientBG {
       0% { background-position: 0% 50%; }
@@ -67,10 +68,10 @@
     }
     .msg {
       max-width: 75%;
-      padding: 12px;
-      border-radius: 18px;
+      padding: 10px;
+      border-radius: 16px;
       word-wrap: break-word;
-      box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
       transition: background-color 0.5s ease;
     }
     .in { background: var(--msg-in-bg, #2c2c3e); align-self: flex-start; border-bottom-left-radius: 6px; }
@@ -79,68 +80,72 @@
     .msg-content {
       display: flex;
       align-items: flex-start;
-      gap: 10px;
+      gap: 8px;
     }
     .avatar {
-      width: 36px;
-      height: 36px;
+      width: 28px;
+      height: 28px;
       border-radius: 50%;
       object-fit: cover;
-      border: 2px solid #25D366;
+      border: 1px solid #25D366;
+      margin-top: 2px;
     }
     .msg-text {
       flex: 1;
       direction: rtl;
+      font-size: 14px;
     }
     .msg-text b {
       display: block;
       font-weight: 600;
-      margin-bottom: 4px;
+      margin-bottom: 3px;
       color: #fff;
+      font-size: 13px;
     }
     .msg-text img, .msg-text audio {
       max-width: 100%;
-      border-radius: 10px;
-      margin-top: 6px;
+      border-radius: 8px;
+      margin-top: 5px;
       display: block;
     }
 
     .input-area {
       display: flex;
-      padding: 12px;
+      padding: 8px;
       background: rgba(255,255,255,0.08);
-      gap: 8px;
+      gap: 6px;
       border-top: 1px solid rgba(255,255,255,0.1);
       align-items: center;
       flex-wrap: wrap;
     }
     .input-area input {
       flex: 1;
-      padding: 12px 18px;
+      padding: 8px 12px;
       border: none;
       background: rgba(0,0,0,0.3);
-      border-radius: 24px;
-      font-size: 15px;
+      border-radius: 20px;
+      font-size: 13px;
       outline: none;
-      min-width: 200px;
+      min-width: 120px;
       color: white;
     }
     .input-area button {
       border: none;
       background: #075e54;
       color: white;
-      padding: 0 18px;
-      border-radius: 20px;
+      padding: 0 12px;
+      border-radius: 18px;
       font-weight: 500;
+      font-size: 13px;
       cursor: pointer;
       transition: background 0.2s;
     }
     .attach-btn, .emoji-btn, .voice-btn {
       background: #5c677d;
-      width: 42px;
-      height: 42px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
-      font-size: 18px;
+      font-size: 16px;
       cursor: pointer;
       border: none;
       display: flex;
@@ -155,35 +160,36 @@
     }
     @keyframes pulse {
       0% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.5); }
-      70% { box-shadow: 0 0 0 12px rgba(211, 47, 47, 0); }
+      70% { box-shadow: 0 0 0 10px rgba(211, 47, 47, 0); }
       100% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0); }
     }
 
     .status-preview {
       max-width: 80%;
-      margin: 12px auto;
-      padding: 14px;
+      margin: 10px auto;
+      padding: 12px;
       background: rgba(255,255,255,0.1);
-      border-radius: 14px;
+      border-radius: 12px;
       text-align: center;
       backdrop-filter: blur(5px);
+      font-size: 14px;
     }
     #statusText {
       width: 90%;
-      margin: 12px auto;
-      padding: 12px;
+      margin: 10px auto;
+      padding: 10px;
       border: 1px solid rgba(255,255,255,0.2);
-      border-radius: 10px;
+      border-radius: 8px;
       background: rgba(0,0,0,0.3);
       color: white;
       font-family: 'Tajawal', sans-serif;
-      font-size: 15px;
+      font-size: 14px;
     }
     #progressContainer {
-      height: 6px;
+      height: 5px;
       background: rgba(255,255,255,0.1);
       border-radius: 3px;
-      margin: 8px 0;
+      margin: 6px 0;
       overflow: hidden;
       display: none;
     }
@@ -196,24 +202,24 @@
     #emojiPanel {
       display: none;
       position: absolute;
-      bottom: 90px;
-      right: 20px;
+      bottom: 80px;
+      right: 15px;
       background: rgba(30, 30, 46, 0.95);
       backdrop-filter: blur(10px);
-      border-radius: 12px;
-      padding: 12px;
+      border-radius: 10px;
+      padding: 10px;
       box-shadow: 0 6px 20px rgba(0,0,0,0.4);
       z-index: 100;
-      max-width: 320px;
+      max-width: 300px;
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
+      gap: 8px;
     }
     .emoji-item {
-      font-size: 22px;
+      font-size: 20px;
       cursor: pointer;
-      padding: 6px;
-      border-radius: 8px;
+      padding: 5px;
+      border-radius: 6px;
       transition: transform 0.2s;
     }
     .emoji-item:hover {
@@ -221,66 +227,71 @@
       background: rgba(255,255,255,0.1);
     }
     .online-indicator {
-      font-size: 13px;
+      font-size: 12px;
       color: #fff;
       background: #25D366;
-      padding: 4px 12px;
-      border-radius: 20px;
-      margin-left: 10px;
+      padding: 3px 10px;
+      border-radius: 18px;
+      margin-left: 8px;
     }
     .online-list {
-      font-size: 12px;
+      font-size: 11px;
       color: #e0e0ff;
       background: rgba(255,255,255,0.08);
-      padding: 8px 12px;
-      border-radius: 10px;
-      margin: 10px 16px 0;
+      padding: 6px 10px;
+      border-radius: 8px;
+      margin: 8px 12px 0;
       display: none;
       backdrop-filter: blur(5px);
     }
     .delivery-status {
-      font-size: 12px;
+      font-size: 11px;
       color: #aaa;
-      margin-top: 4px;
+      margin-top: 3px;
       direction: ltr;
     }
 
     #inAppNotification {
       position: fixed;
-      bottom: 20px;
-      left: 20px;
+      bottom: 15px;
+      left: 15px;
       background: rgba(7, 94, 84, 0.95);
       color: white;
-      padding: 14px 18px;
-      border-radius: 14px;
+      padding: 12px 16px;
+      border-radius: 12px;
       box-shadow: 0 6px 20px rgba(0,0,0,0.4);
       z-index: 1000;
-      max-width: 280px;
+      max-width: 260px;
       display: none;
       font-family: 'Tajawal', sans-serif;
       direction: rtl;
       animation: slideIn 0.3s ease-out;
+      font-size: 13px;
     }
     @keyframes slideIn {
       from { transform: translateY(100px); opacity: 0; }
       to { transform: translateY(0); opacity: 1; }
     }
 
-    .default-avatar {
-      background: #4a5568;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #cbd5e0;
-      font-weight: bold;
+    .user-avatar-header {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .user-avatar-header img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
   </style>
 </head>
 <body>
   <div class="header">
-    <div style="display:flex;align-items:center;gap:12px;">
-      <div id="userAvatarContainer" style="width:36px;height:36px;border-radius:50%;overflow:hidden;cursor:pointer;" onclick="changeAvatar()">
-        <img id="userAvatar" src="" alt="أنا" style="width:100%;height:100%;object-fit:cover;" />
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="user-avatar-header" onclick="changeAvatar()">
+        <img id="userAvatar" src="" alt="أنا" />
       </div>
       <span>دردشتي</span>
     </div>
@@ -297,7 +308,7 @@
   <div id="public-chat" class="chat" style="display:none;"></div>
   <div id="status-section" class="chat" style="display:none;">
     <input type="text" id="statusText" placeholder="اكتب حالتك..." />
-    <button onclick="postStatus()" style="margin:10px auto; display:block; padding:8px 20px; background:#075e54; color:white; border:none; border-radius:8px;">نشر الحالة</button>
+    <button onclick="postStatus()" style="margin:8px auto; display:block; padding:6px 16px; background:#075e54; color:white; border:none; border-radius:6px; font-size:13px;">نشر الحالة</button>
     <div id="statusFeed"></div>
   </div>
 
@@ -324,7 +335,7 @@
   </div>
 
   <script>
-    const emojiList = ['😊', '😂', '😍', '🥰', '😎', '🤩', '🥳', '😭', '😡', '👍', '👏', '💖', '💯', '🔥', '✨', '🎉', '❤️', '🫠', '🫶', '🙏', '🚀', '🌙', '🌈', '🌸'];
+    const emojiList = ['😊', '😂', '😍', '🥰', '😎', '🤩', '🥳', '😭', '😡', '👍', '👏', '💖', '💯', '🔥', '✨', '🎉', '❤️', '🫠', '🫶', '🙏'];
   </script>
 
   <script src="/socket.io/socket.io.js"></script>
@@ -337,8 +348,7 @@
     // تحميل الصورة الشخصية
     let myAvatar = localStorage.getItem('userAvatar') || null;
     if (!myAvatar) {
-      // صورة افتراضية
-      myAvatar = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5" fill="%23cbd5e0"/><path d="M20 22H4a1 1 0 01-1-1v-2a5 5 0 015-5h8a5 5 0 015 5v2a1 1 0 01-1 1z" fill="%23a0aec0"/></svg>';
+      myAvatar = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMCIgaGVpZ2h0PSIzMCIgdmlld0JveD0iMCAwIDI0IDI0Ij48Y2lyY2xlIGN4PSIxMiIgY3k9IjgiIHI9IjUiIGZpbGw9IiM5NTk1OTUiLz48cGF0aCBkPSJNMjAgMjJINGEwIDEgMCAwIDEtMS0xdi0yYTUgNSAwIDAgMTE1LTVoOGE1IDUgMCAwIDE1IDV2MmExIDEgMCAwIDEtMSAxeiIgZmlsbD0iIzk1OTU5NSIvPjwvc3ZnPg==';
       localStorage.setItem('userAvatar', myAvatar);
     }
     document.getElementById('userAvatar').src = myAvatar;
@@ -376,6 +386,17 @@
     document.body.addEventListener('click', initAudio, { once: true });
     document.body.addEventListener('touchstart', initAudio, { once: true });
 
+    // التأكد من وجود غرفة
+    function ensureCurrentRoom() {
+      if (!currentRoom) {
+        currentRoom = 'family';
+        const tab = document.querySelector('.tab[data-room="family"]');
+        if (tab) {
+          tab.click();
+        }
+      }
+    }
+
     // الإشعارات الداخلية
     const unreadCounts = { family: 0, public: 0 };
 
@@ -405,7 +426,7 @@
       div.className = isSelf ? 'msg out' : 'msg in';
 
       const avatarSrc = senderAvatar || 
-        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5" fill="%23cbd5e0"/><path d="M20 22H4a1 1 0 01-1-1v-2a5 5 0 015-5h8a5 5 0 015 5v2a1 1 0 01-1 1z" fill="%23a0aec0"/></svg>';
+        'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI0IDI0Ij48Y2lyY2xlIGN4PSIxMiIgY3k9IjgiIHI9IjUiIGZpbGw9IiM5NTk1OTUiLz48cGF0aCBkPSJNMjAgMjJINGEwIDEgMCAwIDEtMS0xdi0yYTUgNSAwIDAgMTE1LTVoOGE1IDUgMCAwIDE1IDV2MmExIDEgMCAwIDEtMSAxeiIgZmlsbD0iIzk1OTU5NSIvPjwvc3ZnPg==';
 
       let mediaHtml = '';
       if (image) {
@@ -420,7 +441,7 @@
         <div class="msg-content">
           <img src="${avatarSrc}" class="avatar" />
           <div class="msg-text">
-            <b>${name}</b>
+            <b>${name}:</b>
             ${text || ''}
             ${mediaHtml}
             ${statusText ? `<div class="delivery-status">${statusText}</div>` : ''}
@@ -503,12 +524,10 @@
       }
     });
 
-    // تحديث الصورة الشخصية للآخرين
     socket.on('userAvatarUpdate', (data) => {
-      // نخزنها في localStorage باسم المستخدم
       localStorage.setItem(`avatar_${data.name}`, data.avatar);
       // تحديث الرسائل الحالية
-      document.querySelectorAll(`.msg-text b`).forEach(el => {
+      document.querySelectorAll('.msg-text b').forEach(el => {
         if (el.textContent.trim() === data.name + ':') {
           const avatarImg = el.closest('.msg-content').querySelector('.avatar');
           if (avatarImg) avatarImg.src = data.avatar;
@@ -517,6 +536,7 @@
     });
 
     function sendText() {
+      ensureCurrentRoom();
       const text = document.getElementById('msg').value.trim();
       if (!text) return;
       socket.emit('sendMessage', { room: currentRoom, name: myName, text });
@@ -525,6 +545,7 @@
     }
 
     document.getElementById('imageUpload').addEventListener('change', (e) => {
+      ensureCurrentRoom();
       const file = e.target.files[0];
       if (!file || !file.type.match('image/')) return;
 
@@ -552,6 +573,7 @@
     });
 
     async function recordAudio() {
+      ensureCurrentRoom();
       const voiceBtn = document.querySelector('.voice-btn');
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -697,7 +719,6 @@
           myAvatar = ev.target.result;
           localStorage.setItem('userAvatar', myAvatar);
           document.getElementById('userAvatar').src = myAvatar;
-          // إرسال التحديث للخادم
           socket.emit('updateAvatar', { avatar: myAvatar });
         };
         reader.readAsDataURL(file);
@@ -708,4 +729,4 @@
     joinRoom(currentRoom);
   </script>
 </body>
-    </html>
+        </html>
