@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="referrer" content="no-referrer">
-  <title>دردشتي</title>
+  <title>دردشتي الحقيقية</title>
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -66,7 +66,6 @@
     }
     .in { background: #fff; align-self: flex-start; border-bottom-left-radius: 4px; }
     .out { background: #dcf8c6; align-self: flex-end; border-bottom-right-radius: 4px; }
-    .ai { background: #fff8dc; align-self: flex-start; border-bottom-left-radius: 4px; }
     
     .msg img, .msg audio {
       max-width: 100%;
@@ -105,7 +104,7 @@
     .input-area button:hover {
       background: #064a43;
     }
-    .attach-btn, .voice-btn, .status-btn, .ai-btn {
+    .attach-btn, .voice-btn, .status-btn {
       background: #6c757d;
       width: 40px;
       height: 40px;
@@ -119,25 +118,6 @@
       color: white;
       transition: background 0.2s;
     }
-    .attach-btn:hover { background: #5a6268; }
-    .voice-btn:hover { background: #5a6268; }
-    .status-btn:hover { background: #5a6268; }
-    .ai-btn {
-      width: auto;
-      padding: 0 14px;
-      border-radius: 20px;
-      font-size: 14px;
-    }
-
-    .ai-container {
-      display: none;
-      flex: 1;
-      flex-direction: column;
-    }
-    .ai-container.active {
-      display: flex;
-    }
-
     .status-preview {
       max-width: 80%;
       margin: 12px auto;
@@ -156,244 +136,126 @@
       font-family: 'Tajawal', sans-serif;
       font-size: 15px;
     }
-    #statusText:focus {
-      outline: 2px solid #075e54;
-    }
   </style>
 </head>
 <body>
   <div class="header">
-    <span>دردشتي 🌐</span>
-    <button class="ai-btn" onclick="toggleAI()">🤖 AI</button>
+    <span>دردشتي الحقيقية 🌐</span>
   </div>
   
   <div class="tabs">
-    <div class="tab active" onclick="switchTab('family')">عائلة</div>
-    <div class="tab" onclick="switchTab('public')">عامة</div>
-    <div class="tab" onclick="switchTab('status')">حالات</div>
+    <div class="tab active" data-room="family">عائلة</div>
+    <div class="tab" data-room="public">عامة</div>
+    <div class="tab" data-room="status">حالات</div>
   </div>
 
   <div id="family-chat" class="chat active"></div>
-  <div id="public-chat" class="chat"></div>
-  
+  <div id="public-chat" class="chat" style="display:none;"></div>
   <div id="status-section" class="chat" style="display:none;">
     <input type="text" id="statusText" placeholder="اكتب حالتك..." />
-    <button onclick="postStatus()" style="margin:10px auto; display:block; padding:8px 20px;">نشر الحالة</button>
+    <button onclick="postStatus()" style="margin:10px auto; display:block;">نشر الحالة</button>
     <div id="statusFeed"></div>
-  </div>
-  
-  <div id="ai-chat" class="ai-container">
-    <div class="chat" id="ai-messages">
-      <div class="msg ai"><b>الذكاء الاصطناعي:</b> مرحبًا! كيف يمكنني مساعدتك اليوم؟</div>
-    </div>
-    <div class="input-area">
-      <input type="text" id="ai-input" placeholder="اكتب سؤالك..." onkeypress="if(event.key==='Enter') sendAI()" />
-      <button onclick="sendAI()">إرسال</button>
-    </div>
   </div>
 
   <div class="input-area" id="main-input">
-    <input type="text" id="msg" placeholder="اكتب رسالة..." onkeypress="if(event.key==='Enter') sendText()" />
-    <input type="file" id="imageUpload" accept="image/*,.gif" style="display:none;" onchange="sendImage()" />
+    <input type="text" id="msg" placeholder="اكتب رسالة..." />
+    <input type="file" id="imageUpload" accept="image/*" style="display:none;" />
     <button class="attach-btn" onclick="document.getElementById('imageUpload').click()">📎</button>
-    <button class="voice-btn" onclick="recordAudio()">🎤</button>
-    <button class="status-btn" onclick="showStatusModal()">📸</button>
+    <button onclick="sendText()">إرسال</button>
   </div>
 
+  <script src="/socket.io/socket.io.js"></script>
   <script>
-    let currentTab = 'family';
-    let messages = {
-      family: JSON.parse(localStorage.getItem('family') || '[]'),
-      public: JSON.parse(localStorage.getItem('public') || '[]'),
-      status: JSON.parse(localStorage.getItem('status') || '[]')
-    };
-    let aiMessages = JSON.parse(localStorage.getItem('ai') || '[]');
+    const socket = io();
+    let currentRoom = 'family';
+    let myName = localStorage.name || prompt('ما اسمك؟') || 'زائر';
+    localStorage.name = myName;
 
-    function displayMessages() {
-      ['family', 'public'].forEach(tab => {
-        const chat = document.getElementById(tab + '-chat');
-        chat.innerHTML = '';
-        messages[tab].forEach(msg => {
-          const div = document.createElement('div');
-          div.className = msg.self ? 'msg out' : 'msg in';
-          div.innerHTML = `<b>${msg.name || 'زائر'}:</b> ${msg.text || ''}`;
-          
-          if (msg.audio) {
-            div.innerHTML += `<br><audio controls src="${msg.audio}" style="width:100%; margin-top:6px; border-radius:6px;"></audio>`;
-          }
-          if (msg.image) {
-            div.innerHTML += `<br><img src="${msg.image}" alt="صورة" loading="lazy" />`;
-          }
-          
-          chat.appendChild(div);
-        });
-        chat.scrollTop = chat.scrollHeight;
+    // الانضمام إلى الغرفة الافتراضية
+    socket.emit('joinRoom', currentRoom);
+
+    // تبديل الغرفة
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentRoom = tab.dataset.room;
+
+        document.getElementById('family-chat').style.display = currentRoom === 'family' ? 'flex' : 'none';
+        document.getElementById('public-chat').style.display = currentRoom === 'public' ? 'flex' : 'none';
+        document.getElementById('status-section').style.display = currentRoom === 'status' ? 'block' : 'none';
+        document.getElementById('main-input').style.display = currentRoom === 'status' ? 'none' : 'flex';
+
+        if (currentRoom !== 'status') {
+          socket.emit('joinRoom', currentRoom);
+        }
       });
-      
-      const statusFeed = document.getElementById('statusFeed');
-      statusFeed.innerHTML = '';
-      messages.status.forEach(status => {
-        const div = document.createElement('div');
-        div.className = 'status-preview';
-        div.innerHTML = `<b>${status.name || 'زائر'}</b><br>${status.text}`;
-        statusFeed.appendChild(div);
-      });
-    }
+    });
 
-    function switchTab(tab) {
-      currentTab = tab;
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      event.target.classList.add('active');
-      
-      document.getElementById('family-chat').style.display = tab === 'family' ? 'flex' : 'none';
-      document.getElementById('public-chat').style.display = tab === 'public' ? 'flex' : 'none';
-      document.getElementById('status-section').style.display = tab === 'status' ? 'block' : 'none';
-      document.getElementById('main-input').style.display = tab === 'status' ? 'none' : 'flex';
-    }
-
+    // إرسال نص
     function sendText() {
       const text = document.getElementById('msg').value.trim();
       if (!text) return;
-      addMessage({ text, self: true });
+      socket.emit('sendMessage', { room: currentRoom, name: myName, text });
       document.getElementById('msg').value = '';
     }
 
-    function sendImage() {
-      const fileInput = document.getElementById('imageUpload');
-      const file = fileInput.files[0];
-      if (!file) return;
-      
-      if (!file.type.match('image/.*')) {
-        alert('الرجاء اختيار صورة (JPG, PNG, GIF)');
-        return;
-      }
+    // إرسال صورة
+    document.getElementById('imageUpload').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file || !file.type.match('image/.*')) return;
 
       const reader = new FileReader();
-      reader.onload = (e) => {
-        addMessage({ image: e.target.result, self: true });
-        fileInput.value = '';
+      reader.onload = (ev) => {
+        socket.emit('sendImage', { room: currentRoom, name: myName, image: ev.target.result });
+        e.target.value = '';
       };
       reader.readAsDataURL(file);
-    }
+    });
 
-    function addMessage(msg) {
-      const fullMsg = {
-        name: localStorage.name || 'زائر',
-        text: msg.text,
-        image: msg.image,
-        audio: msg.audio,
-        self: msg.self,
-        time: Date.now()
-      };
-      messages[currentTab].push(fullMsg);
-      localStorage.setItem(currentTab, JSON.stringify(messages[currentTab]));
-      displayMessages();
-    }
-
-    async function recordAudio() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const mediaRecorder = new MediaRecorder(stream);
-        const chunks = [];
-        mediaRecorder.ondataavailable = e => chunks.push(e.data);
-        mediaRecorder.start();
-        setTimeout(() => {
-          mediaRecorder.stop();
-          stream.getTracks().forEach(track => track.stop());
-        }, 5000);
-
-        mediaRecorder.onstop = () => {
-          const blob = new Blob(chunks, { type: 'audio/webm' });
-          const url = URL.createObjectURL(blob);
-          addMessage({ audio: url, self: true });
-        };
-      } catch (err) {
-        alert('لم يتمكن من الوصول للميكروفون: ' + (err.message || 'الوصول مرفوض'));
-      }
-    }
-
+    // نشر حالة
     function postStatus() {
       const text = document.getElementById('statusText').value.trim();
       if (!text) return;
-      const status = {
-        name: localStorage.name || 'زائر',
-        text: text,
-        time: Date.now()
-      };
-      messages.status.push(status);
-      localStorage.setItem('status', JSON.stringify(messages.status));
+      socket.emit('postStatus', { name: myName, text });
       document.getElementById('statusText').value = '';
-      displayMessages();
     }
 
-    function showStatusModal() {
-      switchTab('status');
-    }
-
-    function toggleAI() {
-      const aiContainer = document.getElementById('ai-chat');
-      const mainInput = document.getElementById('main-input');
-      const tabs = document.querySelector('.tabs');
-      
-      if (aiContainer.classList.contains('active')) {
-        aiContainer.classList.remove('active');
-        mainInput.style.display = 'flex';
-        tabs.style.display = 'flex';
-      } else {
-        aiContainer.classList.add('active');
-        mainInput.style.display = 'none';
-        tabs.style.display = 'none';
+    // استقبال رسالة
+    socket.on('receiveMessage', (data) => {
+      if (data.room === currentRoom) {
+        appendMessage(data.name, data.text, data.name === myName);
       }
-    }
+    });
 
-    function sendAI() {
-      const input = document.getElementById('ai-input');
-      const text = input.value.trim();
-      if (!text) return;
-      
-      aiMessages.push({ text, self: true });
-      localStorage.setItem('ai', JSON.stringify(aiMessages));
-      displayAIMessages();
+    // استقبال صورة
+    socket.on('receiveImage', (data) => {
+      if (data.room === currentRoom) {
+        appendMessage(data.name, null, data.name === myName, null, data.image);
+      }
+    });
 
-      const aiResponses = [
-        "هذا سؤال رائع! دعني أُفكّر قليلاً...",
-        "بناءً على معرفتي، أنصحك بـ...",
-        "أفهم قصدك تمامًا. إليك رأيي...",
-        "شكرًا لثقتك! إليك الجواب:",
-        "هذا موضوع يستحق التأمل. أقترح أن...",
-        "بالتأكيد! يمكنني مساعدتك في ذلك."
-      ];
+    // استقبال حالة جديدة
+    socket.on('newStatus', (data) => {
+      const feed = document.getElementById('statusFeed');
+      const div = document.createElement('div');
+      div.className = 'status-preview';
+      div.innerHTML = `<b>${data.name}</b><br>${data.text}`;
+      feed.prepend(div);
+    });
 
-      setTimeout(() => {
-        const aiMsg = {
-          text: aiResponses[Math.floor(Math.random() * aiResponses.length)],
-          self: false
-        };
-        aiMessages.push(aiMsg);
-        localStorage.setItem('ai', JSON.stringify(aiMessages));
-        displayAIMessages();
-      }, 1000);
-      
-      input.value = '';
-    }
-
-    function displayAIMessages() {
-      const chat = document.getElementById('ai-messages');
-      chat.innerHTML = '<div class="msg ai"><b>الذكاء الاصطناعي:</b> مرحبًا! كيف يمكنني مساعدتك اليوم؟</div>';
-      aiMessages.forEach(msg => {
-        const div = document.createElement('div');
-        div.className = msg.self ? 'msg out' : 'msg ai';
-        div.innerHTML = `<b>${msg.self ? 'أنت' : 'الذكاء الاصطناعي'}:</b> ${msg.text}`;
-        chat.appendChild(div);
-      });
+    // إضافة رسالة للواجهة
+    function appendMessage(name, text, isSelf, audio = null, image = null) {
+      const chat = document.getElementById(currentRoom === 'family' ? 'family-chat' : 'public-chat');
+      const div = document.createElement('div');
+      div.className = isSelf ? 'msg out' : 'msg in';
+      div.innerHTML = `<b>${name}:</b> ${text || ''}`;
+      if (image) {
+        div.innerHTML += `<br><img src="${image}" loading="lazy" />`;
+      }
+      chat.appendChild(div);
       chat.scrollTop = chat.scrollHeight;
     }
-
-    if (!localStorage.name) {
-      const name = prompt('ما اسمك؟') || 'زائر';
-      localStorage.name = name;
-    }
-    displayMessages();
   </script>
 </body>
 </html>
