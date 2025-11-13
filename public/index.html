@@ -82,7 +82,7 @@
       100% { opacity: 0.3; }
     }
 
-    /* ✅ الخلفية الآن سوداء بحتة — بدون أي gradient */
+    /* الخلفية سوداء بحتة */
     .chat, .posts {
       background: #000;
     }
@@ -153,7 +153,7 @@
       cursor: pointer;
       transition: background 0.2s;
     }
-    .attach-btn, .emoji-btn, .voice-btn {
+    .attach-btn, .emoji-btn, .voice-btn, .call-btn {
       background: #5c677d;
       width: 36px;
       height: 36px;
@@ -170,6 +170,12 @@
     .voice-btn.recording {
       background: #d32f2f;
       animation: pulse 1.5s infinite;
+    }
+    .call-btn {
+      background: #e74c3c;
+    }
+    .call-btn:hover {
+      background: #c0392b;
     }
     @keyframes pulse {
       0% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.5); }
@@ -483,6 +489,7 @@
     <button class="attach-btn" onclick="document.getElementById('imageUpload').click()">📎</button>
     <button class="emoji-btn" onclick="toggleEmojiPanel()">😊</button>
     <button class="voice-btn" onclick="recordAudio()">🎤</button>
+    <button class="call-btn" onclick="startJitsiCall()">📞</button>
     <button onclick="sendText()">إرسال</button>
   </div>
 
@@ -561,10 +568,19 @@
       }
     }
 
+    // ✅ دالة عرض الرسالة مع دعم الروابط القابلة للنقر
     function appendMessage(name, text, isSelf, image = null, audio = null) {
       const chat = document.getElementById(currentRoom === 'family' ? 'family-chat' : 'public-chat');
       const div = document.createElement('div');
       div.className = isSelf ? 'msg out' : 'msg in';
+
+      let processedText = text || '';
+      if (text) {
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        processedText = text.replace(urlRegex, url => 
+          `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color:#25D366;text-decoration:underline;">${url}</a>`
+        );
+      }
 
       let mediaHtml = '';
       if (image) {
@@ -579,7 +595,7 @@
         <div class="msg-content">
           <div class="msg-text">
             <b>${name}:</b>
-            ${text || ''}
+            ${processedText}
             ${mediaHtml}
             ${statusText ? `<div class="delivery-status">${statusText}</div>` : ''}
           </div>
@@ -923,6 +939,17 @@
         panel.style.display = 'none';
       }
     });
+
+    // ✅ دالة مكالمة Jitsi مع إرسال الرابط في الدردشة
+    function startJitsiCall() {
+      const roomName = 'drdshati-' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+      const jitsiUrl = `https://meet.jit.si/${roomName}`;
+      
+      const messageText = `📞 دعوة لمكالمة! انقر للانضمام: ${jitsiUrl}`;
+      socket.emit('sendMessage', { room: currentRoom, name: myName, text: messageText });
+      
+      showInAppNotification('دردشتي', 'تم إرسال رابط المكالمة في الدردشة!');
+    }
 
     function createStars(containerId) {
       const starsContainer = document.getElementById(containerId);
