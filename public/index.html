@@ -67,7 +67,7 @@
     .in { background: #fff; align-self: flex-start; border-bottom-left-radius: 4px; }
     .out { background: #dcf8c6; align-self: flex-end; border-bottom-right-radius: 4px; }
     
-    .msg img {
+    .msg img, .msg audio {
       max-width: 100%;
       border-radius: 10px;
       margin-top: 8px;
@@ -103,7 +103,7 @@
       cursor: pointer;
       transition: background 0.2s;
     }
-    .attach-btn, .emoji-btn {
+    .attach-btn, .emoji-btn, .voice-btn {
       background: #6c757d;
       width: 40px;
       height: 40px;
@@ -117,6 +117,19 @@
       color: white;
       transition: background 0.2s;
     }
+    .attach-btn:hover, .emoji-btn:hover, .voice-btn:hover {
+      background: #5a6268;
+    }
+    .voice-btn.recording {
+      background: #d32f2f;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.4); }
+      70% { box-shadow: 0 0 0 10px rgba(211, 47, 47, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0); }
+    }
+
     .status-preview {
       max-width: 80%;
       margin: 12px auto;
@@ -194,7 +207,6 @@
       direction: ltr;
     }
 
-    /* فقاعة الإشعار الداخلية */
     #inAppNotification {
       position: fixed;
       bottom: 20px;
@@ -245,6 +257,7 @@
     <input type="file" id="imageUpload" accept="image/*" style="display:none;" />
     <button class="attach-btn" onclick="document.getElementById('imageUpload').click()">📎</button>
     <button class="emoji-btn" onclick="toggleEmojiPanel()">😊</button>
+    <button class="voice-btn" onclick="recordAudio()">🎤</button>
     <button onclick="sendText()">إرسال</button>
   </div>
 
@@ -254,7 +267,6 @@
 
   <div id="emojiPanel"></div>
 
-  <!-- فقاعة الإشعار الداخلية -->
   <div id="inAppNotification">
     <b id="notifName"></b><br>
     <span id="notifText"></span>
@@ -271,7 +283,6 @@
     let myName = localStorage.name || prompt('ما اسمك؟') || 'زائر';
     localStorage.name = myName;
 
-    // نظام الصوت الآمن لـ WebView
     let audioContext = null;
     let soundsEnabled = false;
 
@@ -304,7 +315,6 @@
     document.body.addEventListener('click', initAudio, { once: true });
     document.body.addEventListener('touchstart', initAudio, { once: true });
 
-    // نظام الإشعارات الداخلية
     const unreadCounts = { family: 0, public: 0 };
 
     function showInAppNotification(name, text, room) {
@@ -317,7 +327,7 @@
 
         const notif = document.getElementById('inAppNotification');
         document.getElementById('notifName').textContent = name;
-        document.getElementById('notifText').textContent = text || 'أرسل صورة';
+        document.getElementById('notifText').textContent = text || 'أرسل محتوى';
         notif.style.display = 'block';
 
         setTimeout(() => {
@@ -326,7 +336,6 @@
       }
     }
 
-    // ✅ دالة عرض الرسالة الوحيدة (تُستخدم فقط عند الاستلام من الخادم)
     function appendMessage(name, text, isSelf, image = null) {
       const chat = document.getElementById(currentRoom === 'family' ? 'family-chat' : 'public-chat');
       const div = document.createElement('div');
@@ -351,8 +360,19 @@
       const chat = document.getElementById(room === 'family' ? 'family-chat' : 'public-chat');
       chat.innerHTML = '';
       msgs.forEach(msg => {
-        appendMessage(msg.name, msg.text, msg.name === myName, msg.image);
+        if (msg.type === 'text') {
+          appendMessage(msg.name, msg.text, msg.name === myName, null);
+        } else if (msg.type === 'image') {
+          appendMessage(msg.name, '', msg.name === myName, msg.image);
+        } else if (msg.type === 'audio') {
+          const isSelf = msg.name === myName;
+          const div = document.createElement('div');
+          div.className = isSelf ? 'msg out' : 'msg in';
+          div.innerHTML = `<b>${msg.name}:</b> <audio controls src="${msg.audio}" style="width:100%; margin-top:6px; border-radius:6px;"></audio>`;
+          chat.appendChild(div);
+        }
       });
+      chat.scrollTop = chat.scrollHeight;
     }
 
     function loadStatuses(statuses) {
@@ -408,7 +428,6 @@
       }
     });
 
-    // ✅ إصلاح: لا نعرض الرسالة محليًا عند الإرسال
     function sendText() {
       const text = document.getElementById('msg').value.trim();
       if (!text) return;
@@ -417,7 +436,6 @@
       document.getElementById('msg').value = '';
     }
 
-    // ✅ إصلاح: لا نعرض الصورة محليًا عند الإرسال
     document.getElementById('imageUpload').addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file || !file.type.match('image/')) return;
@@ -445,6 +463,51 @@
       reader.readAsDataURL(file);
     });
 
+    // ✅ دالة تسجيل الصوت
+    async function recordAudio() {
+      const voiceBtn = document.querySelector('.voice-btn');
+      
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        voiceBtn.classList.add('recording');
+        voiceBtn.innerHTML = '🎙️';
+
+        const mediaRecorder = new MediaRecorder(stream);
+        const chunks = [];
+
+        mediaRecorder.ondataavailable = (e) => {
+          chunks.push(e.data);
+        };
+
+        mediaRecorder.onstop = async () => {
+          voiceBtn.classList.remove('recording');
+          voiceBtn.innerHTML = '🎤';
+          stream.getTracks().forEach(track => track.stop());
+
+          const blob = new Blob(chunks, { type: 'audio/ogg; codecs=opus' });
+          const reader = new FileReader();
+          reader.onload = () => {
+            socket.emit('sendAudio', { room: currentRoom, name: myName, audio: reader.result });
+            playSendSound();
+          };
+          reader.readAsDataURL(blob);
+        };
+
+        mediaRecorder.start();
+
+        // تسجيل لمدة 8 ثوانٍ
+        setTimeout(() => {
+          mediaRecorder.stop();
+        }, 8000);
+
+      } catch (err) {
+        voiceBtn.classList.remove('recording');
+        voiceBtn.innerHTML = '🎤';
+        alert('لم يتمكن من استخدام الميكروفون: ' + (err.message || 'الإذن مرفوض'));
+        console.error('خطأ في التسجيل:', err);
+      }
+    }
+
     function postStatus() {
       const text = document.getElementById('statusText').value.trim();
       if (!text) return;
@@ -452,7 +515,6 @@
       document.getElementById('statusText').value = '';
     }
 
-    // ✅ استلام الرسائل من الخادم (تظهر لك وللجميع)
     socket.on('receiveMessage', (data) => {
       const isSelf = data.name === myName;
       if (data.room === currentRoom) {
@@ -468,6 +530,25 @@
         appendMessage(data.name, '', isSelf, data.image);
       } else {
         showInAppNotification(data.name, 'أرسل صورة', data.room);
+      }
+    });
+
+    // ✅ استلام الصوت
+    socket.on('receiveAudio', (data) => {
+      const isSelf = data.name === myName;
+      if (data.room === currentRoom) {
+        const chat = document.getElementById(currentRoom === 'family' ? 'family-chat' : 'public-chat');
+        const div = document.createElement('div');
+        div.className = isSelf ? 'msg out' : 'msg in';
+        div.innerHTML = `<b>${data.name}:</b> <audio controls src="${data.audio}" style="width:100%; margin-top:6px; border-radius:6px;"></audio>`;
+        chat.appendChild(div);
+        chat.scrollTop = chat.scrollHeight;
+
+        if (!isSelf) {
+          playReceiveSound();
+        }
+      } else {
+        showInAppNotification(data.name, 'أرسل رسالة صوتية', data.room);
       }
     });
 
@@ -521,4 +602,4 @@
     joinRoom(currentRoom);
   </script>
 </body>
-    </html>
+  </html>
