@@ -62,12 +62,11 @@
       border-radius: 16px;
       word-wrap: break-word;
       box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-      position: relative;
     }
     .in { background: #fff; align-self: flex-start; border-bottom-left-radius: 4px; }
     .out { background: #dcf8c6; align-self: flex-end; border-bottom-right-radius: 4px; }
     
-    .msg img, .msg audio {
+    .msg img {
       max-width: 100%;
       border-radius: 10px;
       margin-top: 8px;
@@ -104,7 +103,7 @@
     .input-area button:hover {
       background: #064a43;
     }
-    .attach-btn, .voice-btn, .status-btn {
+    .attach-btn {
       background: #6c757d;
       width: 40px;
       height: 40px;
@@ -118,6 +117,8 @@
       color: white;
       transition: background 0.2s;
     }
+    .attach-btn:hover { background: #5a6268; }
+
     .status-preview {
       max-width: 80%;
       margin: 12px auto;
@@ -149,17 +150,17 @@
     <div class="tab" data-room="status">حالات</div>
   </div>
 
-  <div id="family-chat" class="chat active"></div>
+  <div id="family-chat" class="chat"></div>
   <div id="public-chat" class="chat" style="display:none;"></div>
   <div id="status-section" class="chat" style="display:none;">
     <input type="text" id="statusText" placeholder="اكتب حالتك..." />
-    <button onclick="postStatus()" style="margin:10px auto; display:block;">نشر الحالة</button>
+    <button onclick="postStatus()" style="margin:10px auto; display:block; padding:8px 20px;">نشر الحالة</button>
     <div id="statusFeed"></div>
   </div>
 
   <div class="input-area" id="main-input">
-    <input type="text" id="msg" placeholder="اكتب رسالة..." />
-    <input type="file" id="imageUpload" accept="image/*" style="display:none;" />
+    <input type="text" id="msg" placeholder="اكتب رسالة..." onkeypress="if(event.key==='Enter') sendText()" />
+    <input type="file" id="imageUpload" accept="image/*,.gif" style="display:none;" />
     <button class="attach-btn" onclick="document.getElementById('imageUpload').click()">📎</button>
     <button onclick="sendText()">إرسال</button>
   </div>
@@ -171,10 +172,50 @@
     let myName = localStorage.name || prompt('ما اسمك؟') || 'زائر';
     localStorage.name = myName;
 
-    // الانضمام إلى الغرفة الافتراضية
-    socket.emit('joinRoom', currentRoom);
+    function appendMessage(name, text, isSelf, image = null) {
+      const chat = document.getElementById(currentRoom === 'family' ? 'family-chat' : 'public-chat');
+      const div = document.createElement('div');
+      div.className = isSelf ? 'msg out' : 'msg in';
+      div.innerHTML = `<b>${name}:</b> ${text || ''}`;
+      if (image) {
+        const img = document.createElement('img');
+        img.src = image;
+        img.alt = "صورة";
+        div.appendChild(document.createElement('br'));
+        div.appendChild(img);
+      }
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
 
-    // تبديل الغرفة
+    function loadMessages(room, msgs) {
+      const chat = document.getElementById(room === 'family' ? 'family-chat' : 'public-chat');
+      chat.innerHTML = '';
+      msgs.forEach(msg => {
+        if (msg.type === 'text') {
+          appendMessage(msg.name, msg.text, msg.name === myName);
+        } else if (msg.type === 'image') {
+          appendMessage(msg.name, '', msg.name === myName, msg.image);
+        }
+      });
+    }
+
+    function loadStatuses(statuses) {
+      const feed = document.getElementById('statusFeed');
+      feed.innerHTML = '';
+      statuses.forEach(st => {
+        const div = document.createElement('div');
+        div.className = 'status-preview';
+        div.innerHTML = `<b>${st.name}</b><br>${st.text}`;
+        feed.prepend(div);
+      });
+    }
+
+    function joinRoom(room) {
+      socket.emit('joinRoom', room);
+      socket.emit('loadStatuses');
+    }
+
     document.querySelectorAll('.tab').forEach(tab => {
       tab.addEventListener('click', () => {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -187,12 +228,23 @@
         document.getElementById('main-input').style.display = currentRoom === 'status' ? 'none' : 'flex';
 
         if (currentRoom !== 'status') {
-          socket.emit('joinRoom', currentRoom);
+          joinRoom(currentRoom);
+        } else {
+          socket.emit('loadStatuses');
         }
       });
     });
 
-    // إرسال نص
+    socket.on('loadMessages', (data) => {
+      if (data.room === currentRoom) {
+        loadMessages(data.room, data.messages);
+      }
+    });
+
+    socket.on('allStatuses', (statuses) => {
+      loadStatuses(statuses);
+    });
+
     function sendText() {
       const text = document.getElementById('msg').value.trim();
       if (!text) return;
@@ -200,11 +252,9 @@
       document.getElementById('msg').value = '';
     }
 
-    // إرسال صورة
     document.getElementById('imageUpload').addEventListener('change', (e) => {
       const file = e.target.files[0];
-      if (!file || !file.type.match('image/.*')) return;
-
+      if (!file || !file.type.match('image/')) return;
       const reader = new FileReader();
       reader.onload = (ev) => {
         socket.emit('sendImage', { room: currentRoom, name: myName, image: ev.target.result });
@@ -213,7 +263,6 @@
       reader.readAsDataURL(file);
     });
 
-    // نشر حالة
     function postStatus() {
       const text = document.getElementById('statusText').value.trim();
       if (!text) return;
@@ -221,21 +270,18 @@
       document.getElementById('statusText').value = '';
     }
 
-    // استقبال رسالة
     socket.on('receiveMessage', (data) => {
       if (data.room === currentRoom) {
         appendMessage(data.name, data.text, data.name === myName);
       }
     });
 
-    // استقبال صورة
     socket.on('receiveImage', (data) => {
       if (data.room === currentRoom) {
-        appendMessage(data.name, null, data.name === myName, null, data.image);
+        appendMessage(data.name, '', data.name === myName, data.image);
       }
     });
 
-    // استقبال حالة جديدة
     socket.on('newStatus', (data) => {
       const feed = document.getElementById('statusFeed');
       const div = document.createElement('div');
@@ -244,18 +290,8 @@
       feed.prepend(div);
     });
 
-    // إضافة رسالة للواجهة
-    function appendMessage(name, text, isSelf, audio = null, image = null) {
-      const chat = document.getElementById(currentRoom === 'family' ? 'family-chat' : 'public-chat');
-      const div = document.createElement('div');
-      div.className = isSelf ? 'msg out' : 'msg in';
-      div.innerHTML = `<b>${name}:</b> ${text || ''}`;
-      if (image) {
-        div.innerHTML += `<br><img src="${image}" loading="lazy" />`;
-      }
-      chat.appendChild(div);
-      chat.scrollTop = chat.scrollHeight;
-    }
+    // الانضمام عند التحميل
+    joinRoom(currentRoom);
   </script>
 </body>
-</html>
+      </html>
