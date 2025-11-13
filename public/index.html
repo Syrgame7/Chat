@@ -818,12 +818,23 @@
 
     socket.on('loadStatuses', (statuses) => loadStatuses(statuses));
 
+    // --- متغير لتتبع المستخدمين ---
+    let usersInRoom = {};
+
     socket.on('onlineUsers', (data) => {
       if (data.room === currentRoom) {
         document.getElementById('onlineCount').textContent = `متصلين: ${data.count}`;
         const listEl = document.getElementById('onlineList');
         listEl.innerHTML = `<b>المتصلون:</b> ${data.users.join(', ')}`;
         listEl.style.display = 'block';
+
+        // حفظ المستخدمين مع socket.id
+        usersInRoom = {};
+        if (data.usersWithId) {
+          data.usersWithId.forEach(user => {
+            usersInRoom[user.id] = user.name;
+          });
+        }
       }
     });
 
@@ -997,7 +1008,6 @@
     let peerConnection = null;
     let currentCallSocketId = null;
     let audioStream = null;
-    let usersInRoom = {}; // { socketId: name }
 
     function endCall() {
       if (audioStream) {
@@ -1012,19 +1022,20 @@
     }
 
     async function startVoiceCall() {
-      // تحديث قائمة المستخدمين من الخادم (سيتم دعمها لاحقًا)
-      const activeTab = document.querySelector('.tab.active');
-      if (!activeTab) return;
-
-      // محاولة بسيطة: إذا كان هناك أكثر من شخص
-      const onlineCount = parseInt(document.getElementById('onlineCount').textContent.replace('متصلين: ', ''));
-      if (onlineCount < 2) {
+      if (!usersInRoom || Object.keys(usersInRoom).length < 2) {
         alert('لا يوجد مستخدمين آخرين في الغرفة!');
         return;
       }
 
-      // في تطبيق حقيقي، نحتاج معرفة socketId للطرف الآخر
-      // لكن هنا سنستخدم طريقة مبسطة: إرسال إلى الجميع في الغرفة
+      const otherUsers = Object.keys(usersInRoom).filter(id => id !== socket.id);
+      if (otherUsers.length === 0) {
+        alert('لا يوجد مستخدمين آخرين!');
+        return;
+      }
+
+      const targetSocketId = otherUsers[0];
+      const targetName = usersInRoom[targetSocketId];
+
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
         audioStream = stream;
@@ -1037,25 +1048,24 @@
         const offer = await peerConnection.createOffer();
         await peerConnection.setLocalDescription(offer);
 
-        // إرسال طلب المكالمة إلى الجميع في الغرفة
         socket.emit('callUser', {
-          room: currentRoom,
+          toSocketId: targetSocketId,
           fromName: myName,
+          fromSocketId: socket.id,
           offer: peerConnection.localDescription
         });
 
-        currentCallSocketId = 'broadcast'; // مؤقت
+        currentCallSocketId = targetSocketId;
 
-        // عرض شاشة الانتظار
-        document.getElementById('callInfo').textContent = 'جاري الاتصال...';
+        document.getElementById('callInfo').textContent = `جاري الاتصال بـ ${targetName}...`;
+        document.getElementById('callModal').style.display = 'flex';
         document.getElementById('callButtons').style.display = 'none';
         document.getElementById('endCall').style.display = 'block';
-        document.getElementById('callModal').style.display = 'flex';
 
         peerConnection.onicecandidate = (event) => {
           if (event.candidate) {
             socket.emit('iceCandidate', {
-              room: currentRoom,
+              toSocketId: targetSocketId,
               candidate: event.candidate
             });
           }
@@ -1072,12 +1082,8 @@
       }
     }
 
-    // استقبال طلب مكالمة
     socket.on('incomingCall', async (data) => {
-      if (currentCallSocketId) {
-        // مكالمة نشطة
-        return;
-      }
+      if (currentCallSocketId) return;
 
       if (confirm(`مكالمة صوتية من ${data.from} — هل تريد الرد؟`)) {
         try {
@@ -1113,11 +1119,10 @@
             remoteAudio.srcObject = event.streams[0];
           };
 
-          // عرض شاشة المكالمة
           document.getElementById('callInfo').textContent = `مكالمة مع ${data.from}`;
+          document.getElementById('callModal').style.display = 'flex';
           document.getElementById('callButtons').style.display = 'none';
           document.getElementById('endCall').style.display = 'block';
-          document.getElementById('callModal').style.display = 'flex';
 
         } catch (err) {
           alert('فشل الرد على المكالمة');
@@ -1128,16 +1133,13 @@
       }
     });
 
-    // قبول المكالمة
     socket.on('callAccepted', async (data) => {
       try {
         await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-
         peerConnection.ontrack = (event) => {
           const remoteAudio = document.getElementById('remoteAudio');
           remoteAudio.srcObject = event.streams[0];
         };
-
         document.getElementById('callInfo').textContent = 'المكالمة متصلة!';
       } catch (err) {
         alert('فشل توصيل المكالمة');
@@ -1145,19 +1147,16 @@
       }
     });
 
-    // ICE candidates
     socket.on('iceCandidate', (candidate) => {
       if (peerConnection) {
         peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
       }
     });
 
-    // إنهاء المكالمة
     socket.on('callEnded', () => {
       endCall();
     });
 
-    // أزرار شاشة المكالمة
     document.getElementById('rejectCall').onclick = () => {
       if (currentCallSocketId) {
         socket.emit('callEnded', { toSocketId: currentCallSocketId });
@@ -1171,16 +1170,6 @@
       }
       endCall();
     };
-
-    // تحديث قائمة المتصلين (سيتم دعم socketId لاحقًا)
-    socket.on('onlineUsers', (data) => {
-      if (data.room === currentRoom) {
-        document.getElementById('onlineCount').textContent = `متصلين: ${data.count}`;
-        const listEl = document.getElementById('onlineList');
-        listEl.innerHTML = `<b>المتصلون:</b> ${data.users.join(', ')}`;
-        listEl.style.display = 'block';
-      }
-    });
 
     function createStars(containerId) {
       const starsContainer = document.getElementById(containerId);
@@ -1230,4 +1219,4 @@
     joinRoom(currentRoom);
   </script>
 </body>
-      </html>
+  </html>
