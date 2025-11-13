@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>دردشتي</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #e5ddd5;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .header { background: #075e54; color: white; padding: 12px; text-align: center; font-weight: bold; }
+    .chat { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+    .msg { max-width: 70%; padding: 8px 12px; border-radius: 8px; word-wrap: break-word; }
+    .in { background: #fff; align-self: flex-start; }
+    .out { background: #dcf8c6; align-self: flex-end; }
+    .input-area { display: flex; padding: 8px; background: #fff; gap: 8px; }
+    .input-area input { flex: 1; padding: 10px; border: none; background: #f0f0f0; border-radius: 20px; }
+    .input-area button { border: none; background: #075e54; color: white; padding: 0 16px; border-radius: 20px; }
+    .voice-btn { background: #6c757d; padding: 0 12px; border-radius: 20px; font-size: 20px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="header">دردشتي 🌐</div>
+  <div class="chat" id="chat"></div>
+  <div class="input-area">
+    <input type="text" id="msg" placeholder="اكتب..." />
+    <button onclick="sendText()">إرسال</button>
+    <button class="voice-btn" onclick="recordAudio()">🎤 تسجيل</button>
+  </div>
+
+  <script>
+    // تخزين الرسائل مؤقتًا في الذاكرة
+    let messages = JSON.parse(localStorage.getItem('messages') || '[]');
+
+    function displayMessages() {
+      const chat = document.getElementById('chat');
+      chat.innerHTML = '';
+      messages.forEach(msg => {
+        const div = document.createElement('div');
+        div.className = msg.self ? 'msg out' : 'msg in';
+        div.innerHTML = `<b>${msg.name}:</b> ${msg.text || ''}`;
+        if (msg.audio) {
+          div.innerHTML += `<br><audio controls src="${msg.audio}" style="width:100%; margin-top:5px;"></audio>`;
+        }
+        chat.appendChild(div);
+      });
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function sendText() {
+      const text = document.getElementById('msg').value.trim();
+      if (!text) return;
+      const msg = {
+        name: localStorage.name || 'زائر',
+        text: text,
+        self: true,
+        time: Date.now()
+      };
+      messages.push(msg);
+      localStorage.setItem('messages', JSON.stringify(messages));
+      displayMessages();
+      document.getElementById('msg').value = '';
+    }
+
+    async function recordAudio() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mediaRecorder = new MediaRecorder(stream);
+        const chunks = [];
+        mediaRecorder.ondataavailable = e => chunks.push(e.data);
+        mediaRecorder.start();
+        setTimeout(() => {
+          mediaRecorder.stop();
+          stream.getTracks().forEach(track => track.stop());
+        }, 5000); // سجل 5 ثوانٍ
+
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(chunks, { type: 'audio/webm' });
+          const url = URL.createObjectURL(blob);
+          const msg = {
+            name: localStorage.name || 'زائر',
+            audio: url,
+            self: true,
+            time: Date.now()
+          };
+          messages.push(msg);
+          localStorage.setItem('messages', JSON.stringify(messages));
+          displayMessages();
+        };
+      } catch (err) {
+        alert('لم يتمكن من الوصول للميكروفون: ' + err.message);
+      }
+    }
+
+    if (!localStorage.name) {
+      localStorage.name = prompt('اكتب اسمك:') || 'زائر';
+    }
+
+    displayMessages();
+  </script>
+</body>
+</html> new Blob(chunks, { type: 'audio/webm' });
+        const filename = `audio/${Date.now()}.webm`;
+        const uploadTask = storage.ref(filename).put(blob);
+        const snapshot = await uploadTask;
+        const audioUrl = await snapshot.ref.getDownloadURL();
+        db.ref('messages').push({
+          name: localStorage.name || 'زائر',
+          audioUrl: audioUrl,
+          uid: getUid(),
+          time: Date.now()
+        });
+      };
+    }
+
+    // اسم المستخدم
+    if (!localStorage.name) {
+      const name = prompt('اكتب اسمك:') || 'زائر';
+      localStorage.name = name;
+    }
+  </script>
+</body>
+</html>
