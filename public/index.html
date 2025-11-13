@@ -485,6 +485,22 @@
       padding: 10px 20px;
       font-size: 16px;
     }
+
+    /* تحذير الصوت */
+    .audio-warning {
+      background: #e74c3c;
+      color: white;
+      padding: 8px;
+      border-radius: 8px;
+      margin: 8px 16px 0;
+      text-align: center;
+      display: none;
+      z-index: 1001;
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
   </style>
 </head>
 <body>
@@ -545,6 +561,11 @@
   <div id="inAppNotification">
     <b id="notifName"></b><br>
     <span id="notifText"></span>
+  </div>
+
+  <!-- تحذير الصوت -->
+  <div id="audioWarning" class="audio-warning">
+    ⚠️ اضغط في أي مكان لتفعيل الصوت
   </div>
 
   <!-- شاشة المكالمة -->
@@ -816,9 +837,8 @@
       if (data.room === currentRoom) loadMessages(data.room, data.messages);
     });
 
-    socket.on('loadStatuses', (statuses) => loadStatuses(statuses));
+    socket.on('loadStatuses', (statuses) => loadStatuses(statuses);
 
-    // --- متغير لتتبع المستخدمين ---
     let usersInRoom = {};
 
     socket.on('onlineUsers', (data) => {
@@ -828,7 +848,6 @@
         listEl.innerHTML = `<b>المتصلون:</b> ${data.users.join(', ')}`;
         listEl.style.display = 'block';
 
-        // حفظ المستخدمين مع socket.id
         usersInRoom = {};
         if (data.usersWithId) {
           data.usersWithId.forEach(user => {
@@ -1062,6 +1081,10 @@
         document.getElementById('callButtons').style.display = 'none';
         document.getElementById('endCall').style.display = 'block';
 
+        // تفعيل الصوت
+        enableAudioContext();
+        showAudioWarning();
+
         peerConnection.onicecandidate = (event) => {
           if (event.candidate) {
             socket.emit('iceCandidate', {
@@ -1074,6 +1097,10 @@
         peerConnection.ontrack = (event) => {
           const remoteAudio = document.getElementById('remoteAudio');
           remoteAudio.srcObject = event.streams[0];
+          remoteAudio.play().catch(err => {
+            console.warn('فشل تشغيل الصوت:', err);
+            showAudioWarning();
+          });
         };
 
       } catch (err) {
@@ -1117,12 +1144,19 @@
           peerConnection.ontrack = (event) => {
             const remoteAudio = document.getElementById('remoteAudio');
             remoteAudio.srcObject = event.streams[0];
+            remoteAudio.play().catch(err => {
+              console.warn('فشل تشغيل الصوت:', err);
+              showAudioWarning();
+            });
           };
 
           document.getElementById('callInfo').textContent = `مكالمة مع ${data.from}`;
           document.getElementById('callModal').style.display = 'flex';
           document.getElementById('callButtons').style.display = 'none';
           document.getElementById('endCall').style.display = 'block';
+
+          enableAudioContext();
+          showAudioWarning();
 
         } catch (err) {
           alert('فشل الرد على المكالمة');
@@ -1139,6 +1173,10 @@
         peerConnection.ontrack = (event) => {
           const remoteAudio = document.getElementById('remoteAudio');
           remoteAudio.srcObject = event.streams[0];
+          remoteAudio.play().catch(err => {
+            console.warn('فشل تشغيل الصوت:', err);
+            showAudioWarning();
+          });
         };
         document.getElementById('callInfo').textContent = 'المكالمة متصلة!';
       } catch (err) {
@@ -1170,6 +1208,26 @@
       }
       endCall();
     };
+
+    function enableAudioContext() {
+      if (audioContext && audioContext.state === 'suspended') {
+        audioContext.resume().then(() => {
+          console.log('✅ تم تفعيل الصوت');
+        }).catch(err => {
+          console.warn('فشل تفعيل الصوت:', err);
+        });
+      }
+    }
+
+    function showAudioWarning() {
+      document.getElementById('audioWarning').style.display = 'block';
+      setTimeout(() => {
+        document.getElementById('audioWarning').style.display = 'none';
+      }, 5000);
+    }
+
+    document.addEventListener('click', enableAudioContext, { once: true });
+    document.addEventListener('touchstart', enableAudioContext, { once: true });
 
     function createStars(containerId) {
       const starsContainer = document.getElementById(containerId);
