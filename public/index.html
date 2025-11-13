@@ -3,117 +3,397 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="referrer" content="no-referrer">
   <title>دردشتي</title>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Tajawal', Arial, sans-serif;
       background: #e5ddd5;
       height: 100vh;
       display: flex;
       flex-direction: column;
+      color: #333;
     }
-    .header { background: #075e54; color: white; padding: 12px; text-align: center; font-weight: bold; }
-    .chat { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
-    .msg { max-width: 70%; padding: 8px 12px; border-radius: 8px; word-wrap: break-word; }
-    .in { background: #fff; align-self: flex-start; }
-    .out { background: #dcf8c6; align-self: flex-end; }
-    .input-area { display: flex; padding: 8px; background: #fff; gap: 8px; }
-    .input-area input { flex: 1; padding: 10px; border: none; background: #f0f0f0; border-radius: 20px; }
-    .input-area button { border: none; background: #075e54; color: white; padding: 0 16px; border-radius: 20px; }
-    .voice-btn { background: #6c757d; padding: 0 12px; border-radius: 20px; font-size: 20px; cursor: pointer; }
+    .header {
+      background: #075e54;
+      color: white;
+      padding: 14px 16px;
+      text-align: center;
+      font-weight: bold;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+    .tabs {
+      display: flex;
+      background: #075e54;
+      padding: 0;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+    .tab {
+      flex: 1;
+      padding: 14px 0;
+      text-align: center;
+      cursor: pointer;
+      color: rgba(255,255,255,0.7);
+      transition: color 0.2s;
+      font-weight: 500;
+    }
+    .tab:hover { color: white; }
+    .tab.active {
+      color: white;
+      font-weight: 700;
+      border-bottom: 2px solid #25D366;
+    }
+    .chat {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .msg {
+      max-width: 70%;
+      padding: 10px 14px;
+      border-radius: 16px;
+      word-wrap: break-word;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      position: relative;
+    }
+    .in { background: #fff; align-self: flex-start; border-bottom-left-radius: 4px; }
+    .out { background: #dcf8c6; align-self: flex-end; border-bottom-right-radius: 4px; }
+    .ai { background: #fff8dc; align-self: flex-start; border-bottom-left-radius: 4px; }
+    
+    .msg img, .msg audio {
+      max-width: 100%;
+      border-radius: 10px;
+      margin-top: 8px;
+      display: block;
+    }
+
+    .input-area {
+      display: flex;
+      padding: 12px;
+      background: #fff;
+      gap: 10px;
+      border-top: 1px solid #ddd;
+      align-items: center;
+    }
+    .input-area input {
+      flex: 1;
+      padding: 12px 18px;
+      border: none;
+      background: #f0f0f0;
+      border-radius: 24px;
+      font-size: 15px;
+      outline: none;
+    }
+    .input-area button {
+      border: none;
+      background: #075e54;
+      color: white;
+      padding: 0 18px;
+      border-radius: 20px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .input-area button:hover {
+      background: #064a43;
+    }
+    .attach-btn, .voice-btn, .status-btn, .ai-btn {
+      background: #6c757d;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      font-size: 18px;
+      cursor: pointer;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      transition: background 0.2s;
+    }
+    .attach-btn:hover { background: #5a6268; }
+    .voice-btn:hover { background: #5a6268; }
+    .status-btn:hover { background: #5a6268; }
+    .ai-btn {
+      width: auto;
+      padding: 0 14px;
+      border-radius: 20px;
+      font-size: 14px;
+    }
+
+    .ai-container {
+      display: none;
+      flex: 1;
+      flex-direction: column;
+    }
+    .ai-container.active {
+      display: flex;
+    }
+
+    .status-preview {
+      max-width: 80%;
+      margin: 12px auto;
+      padding: 14px;
+      background: white;
+      border-radius: 14px;
+      text-align: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+    #statusText {
+      width: 90%;
+      margin: 12px auto;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      font-family: 'Tajawal', sans-serif;
+      font-size: 15px;
+    }
+    #statusText:focus {
+      outline: 2px solid #075e54;
+    }
   </style>
 </head>
 <body>
-  <div class="header">دردشتي 🌐</div>
-  <div class="chat" id="chat"></div>
-  <div class="input-area">
-    <input type="text" id="msg" placeholder="اكتب..." />
-    <button onclick="sendText()">إرسال</button>
-    <button class="voice-btn" onclick="recordAudio()">🎤</button>
+  <div class="header">
+    <span>دردشتي 🌐</span>
+    <button class="ai-btn" onclick="toggleAI()">🤖 AI</button>
+  </div>
+  
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('family')">عائلة</div>
+    <div class="tab" onclick="switchTab('public')">عامة</div>
+    <div class="tab" onclick="switchTab('status')">حالات</div>
   </div>
 
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+  <div id="family-chat" class="chat active"></div>
+  <div id="public-chat" class="chat"></div>
+  
+  <div id="status-section" class="chat" style="display:none;">
+    <input type="text" id="statusText" placeholder="اكتب حالتك..." />
+    <button onclick="postStatus()" style="margin:10px auto; display:block; padding:8px 20px;">نشر الحالة</button>
+    <div id="statusFeed"></div>
+  </div>
+  
+  <div id="ai-chat" class="ai-container">
+    <div class="chat" id="ai-messages">
+      <div class="msg ai"><b>الذكاء الاصطناعي:</b> مرحبًا! كيف يمكنني مساعدتك اليوم؟</div>
+    </div>
+    <div class="input-area">
+      <input type="text" id="ai-input" placeholder="اكتب سؤالك..." onkeypress="if(event.key==='Enter') sendAI()" />
+      <button onclick="sendAI()">إرسال</button>
+    </div>
+  </div>
+
+  <div class="input-area" id="main-input">
+    <input type="text" id="msg" placeholder="اكتب رسالة..." onkeypress="if(event.key==='Enter') sendText()" />
+    <input type="file" id="imageUpload" accept="image/*,.gif" style="display:none;" onchange="sendImage()" />
+    <button class="attach-btn" onclick="document.getElementById('imageUpload').click()">📎</button>
+    <button class="voice-btn" onclick="recordAudio()">🎤</button>
+    <button class="status-btn" onclick="showStatusModal()">📸</button>
+  </div>
 
   <script>
-    // 👇 الصق كود Firebase هنا (من الخطوة 2)
-    const firebaseConfig = {
-  apiKey: "AIzaSyAoyJk6vUqmRWS1Y_24PWH4DksULqfh8Jg",
-  authDomain: "chat-voice-b20d7.firebaseapp.com",
-  projectId: "chat-voice-b20d7",
-  storageBucket: "chat-voice-b20d7.firebasestorage.app",
-  messagingSenderId: "419287060625",
-  appId: "1:419287060625:web:229e52427ac6cd381fef30",
-  measurementId: "G-6P2K4V5051"
-};
-    // تهيئة Firebase
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    const storage = firebase.storage();
+    let currentTab = 'family';
+    let messages = {
+      family: JSON.parse(localStorage.getItem('family') || '[]'),
+      public: JSON.parse(localStorage.getItem('public') || '[]'),
+      status: JSON.parse(localStorage.getItem('status') || '[]')
+    };
+    let aiMessages = JSON.parse(localStorage.getItem('ai') || '[]');
 
-    // عرض الرسائل
-    db.ref('messages').on('child_added', (snapshot) => {
-      const msg = snapshot.val();
-      const div = document.createElement('div');
-      div.className = msg.uid === getUid() ? 'msg out' : 'msg in';
-      div.innerHTML = `<b>${msg.name}:</b> ${msg.text || ''}`;
-      if (msg.audioUrl) {
-        div.innerHTML += `<br><audio controls src="${msg.audioUrl}" style="width:100%; margin-top:5px;"></audio>`;
-      }
-      document.getElementById('chat').appendChild(div);
-      div.scrollIntoView();
-    });
+    function displayMessages() {
+      ['family', 'public'].forEach(tab => {
+        const chat = document.getElementById(tab + '-chat');
+        chat.innerHTML = '';
+        messages[tab].forEach(msg => {
+          const div = document.createElement('div');
+          div.className = msg.self ? 'msg out' : 'msg in';
+          div.innerHTML = `<b>${msg.name || 'زائر'}:</b> ${msg.text || ''}`;
+          
+          if (msg.audio) {
+            div.innerHTML += `<br><audio controls src="${msg.audio}" style="width:100%; margin-top:6px; border-radius:6px;"></audio>`;
+          }
+          if (msg.image) {
+            div.innerHTML += `<br><img src="${msg.image}" alt="صورة" loading="lazy" />`;
+          }
+          
+          chat.appendChild(div);
+        });
+        chat.scrollTop = chat.scrollHeight;
+      });
+      
+      const statusFeed = document.getElementById('statusFeed');
+      statusFeed.innerHTML = '';
+      messages.status.forEach(status => {
+        const div = document.createElement('div');
+        div.className = 'status-preview';
+        div.innerHTML = `<b>${status.name || 'زائر'}</b><br>${status.text}`;
+        statusFeed.appendChild(div);
+      });
+    }
 
-    function getUid() {
-      return localStorage.uid || (localStorage.uid = Date.now().toString(36));
+    function switchTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
+      
+      document.getElementById('family-chat').style.display = tab === 'family' ? 'flex' : 'none';
+      document.getElementById('public-chat').style.display = tab === 'public' ? 'flex' : 'none';
+      document.getElementById('status-section').style.display = tab === 'status' ? 'block' : 'none';
+      document.getElementById('main-input').style.display = tab === 'status' ? 'none' : 'flex';
     }
 
     function sendText() {
       const text = document.getElementById('msg').value.trim();
       if (!text) return;
-      db.ref('messages').push({
-        name: localStorage.name || 'زائر',
-        text: text,
-        uid: getUid(),
-        time: Date.now()
-      });
+      addMessage({ text, self: true });
       document.getElementById('msg').value = '';
     }
 
-    async function recordAudio() {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      const chunks = [];
-      mediaRecorder.ondataavailable = e => chunks.push(e.data);
-      mediaRecorder.start();
-      setTimeout(() => {
-        mediaRecorder.stop();
-        stream.getTracks().forEach(track => track.stop());
-      }, 5000); // سجل 5 ثوانٍ
+    function sendImage() {
+      const fileInput = document.getElementById('imageUpload');
+      const file = fileInput.files[0];
+      if (!file) return;
+      
+      if (!file.type.match('image/.*')) {
+        alert('الرجاء اختيار صورة (JPG, PNG, GIF)');
+        return;
+      }
 
-      mediaRecorder.onstop = async () => {
-        const blob = new Blob(chunks, { type: 'audio/webm' });
-        const filename = `audio/${Date.now()}.webm`;
-        const uploadTask = storage.ref(filename).put(blob);
-        const snapshot = await uploadTask;
-        const audioUrl = await snapshot.ref.getDownloadURL();
-        db.ref('messages').push({
-          name: localStorage.name || 'زائر',
-          audioUrl: audioUrl,
-          uid: getUid(),
-          time: Date.now()
-        });
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        addMessage({ image: e.target.result, self: true });
+        fileInput.value = '';
       };
+      reader.readAsDataURL(file);
     }
 
-    // اسم المستخدم
+    function addMessage(msg) {
+      const fullMsg = {
+        name: localStorage.name || 'زائر',
+        text: msg.text,
+        image: msg.image,
+        audio: msg.audio,
+        self: msg.self,
+        time: Date.now()
+      };
+      messages[currentTab].push(fullMsg);
+      localStorage.setItem(currentTab, JSON.stringify(messages[currentTab]));
+      displayMessages();
+    }
+
+    async function recordAudio() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mediaRecorder = new MediaRecorder(stream);
+        const chunks = [];
+        mediaRecorder.ondataavailable = e => chunks.push(e.data);
+        mediaRecorder.start();
+        setTimeout(() => {
+          mediaRecorder.stop();
+          stream.getTracks().forEach(track => track.stop());
+        }, 5000);
+
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(chunks, { type: 'audio/webm' });
+          const url = URL.createObjectURL(blob);
+          addMessage({ audio: url, self: true });
+        };
+      } catch (err) {
+        alert('لم يتمكن من الوصول للميكروفون: ' + (err.message || 'الوصول مرفوض'));
+      }
+    }
+
+    function postStatus() {
+      const text = document.getElementById('statusText').value.trim();
+      if (!text) return;
+      const status = {
+        name: localStorage.name || 'زائر',
+        text: text,
+        time: Date.now()
+      };
+      messages.status.push(status);
+      localStorage.setItem('status', JSON.stringify(messages.status));
+      document.getElementById('statusText').value = '';
+      displayMessages();
+    }
+
+    function showStatusModal() {
+      switchTab('status');
+    }
+
+    function toggleAI() {
+      const aiContainer = document.getElementById('ai-chat');
+      const mainInput = document.getElementById('main-input');
+      const tabs = document.querySelector('.tabs');
+      
+      if (aiContainer.classList.contains('active')) {
+        aiContainer.classList.remove('active');
+        mainInput.style.display = 'flex';
+        tabs.style.display = 'flex';
+      } else {
+        aiContainer.classList.add('active');
+        mainInput.style.display = 'none';
+        tabs.style.display = 'none';
+      }
+    }
+
+    function sendAI() {
+      const input = document.getElementById('ai-input');
+      const text = input.value.trim();
+      if (!text) return;
+      
+      aiMessages.push({ text, self: true });
+      localStorage.setItem('ai', JSON.stringify(aiMessages));
+      displayAIMessages();
+
+      const aiResponses = [
+        "هذا سؤال رائع! دعني أُفكّر قليلاً...",
+        "بناءً على معرفتي، أنصحك بـ...",
+        "أفهم قصدك تمامًا. إليك رأيي...",
+        "شكرًا لثقتك! إليك الجواب:",
+        "هذا موضوع يستحق التأمل. أقترح أن...",
+        "بالتأكيد! يمكنني مساعدتك في ذلك."
+      ];
+
+      setTimeout(() => {
+        const aiMsg = {
+          text: aiResponses[Math.floor(Math.random() * aiResponses.length)],
+          self: false
+        };
+        aiMessages.push(aiMsg);
+        localStorage.setItem('ai', JSON.stringify(aiMessages));
+        displayAIMessages();
+      }, 1000);
+      
+      input.value = '';
+    }
+
+    function displayAIMessages() {
+      const chat = document.getElementById('ai-messages');
+      chat.innerHTML = '<div class="msg ai"><b>الذكاء الاصطناعي:</b> مرحبًا! كيف يمكنني مساعدتك اليوم؟</div>';
+      aiMessages.forEach(msg => {
+        const div = document.createElement('div');
+        div.className = msg.self ? 'msg out' : 'msg ai';
+        div.innerHTML = `<b>${msg.self ? 'أنت' : 'الذكاء الاصطناعي'}:</b> ${msg.text}`;
+        chat.appendChild(div);
+      });
+      chat.scrollTop = chat.scrollHeight;
+    }
+
     if (!localStorage.name) {
-      const name = prompt('اكتب اسمك:') || 'زائر';
+      const name = prompt('ما اسمك؟') || 'زائر';
       localStorage.name = name;
     }
+    displayMessages();
   </script>
 </body>
 </html>
