@@ -1,7 +1,7 @@
 {
   "name": "drdshati-realtime",
   "version": "1.0.0",
-  "description": "دردشة عربية حقيقية مع دعم الصور والصوت",
+  "description": "دردشة عربية حقيقية مع دعم الصور والرسائل المحفوظة",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
