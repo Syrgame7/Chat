@@ -62,6 +62,7 @@
       border-radius: 16px;
       word-wrap: break-word;
       box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      transition: color 0.3s;
     }
     .in { background: #fff; align-self: flex-start; border-bottom-left-radius: 4px; }
     .out { background: #dcf8c6; align-self: flex-end; border-bottom-right-radius: 4px; }
@@ -80,6 +81,7 @@
       gap: 10px;
       border-top: 1px solid #ddd;
       align-items: center;
+      flex-wrap: wrap;
     }
     .input-area input {
       flex: 1;
@@ -89,6 +91,7 @@
       border-radius: 24px;
       font-size: 15px;
       outline: none;
+      min-width: 200px;
     }
     .input-area button {
       border: none;
@@ -103,7 +106,7 @@
     .input-area button:hover {
       background: #064a43;
     }
-    .attach-btn {
+    .attach-btn, .emoji-btn {
       background: #6c757d;
       width: 40px;
       height: 40px;
@@ -117,7 +120,9 @@
       color: white;
       transition: background 0.2s;
     }
-    .attach-btn:hover { background: #5a6268; }
+    .attach-btn:hover, .emoji-btn:hover {
+      background: #5a6268;
+    }
 
     .status-preview {
       max-width: 80%;
@@ -137,11 +142,73 @@
       font-family: 'Tajawal', sans-serif;
       font-size: 15px;
     }
+
+    /* شريط التقدم */
+    #progressContainer {
+      height: 6px;
+      background: #f0f0f0;
+      border-radius: 3px;
+      margin: 8px 0;
+      overflow: hidden;
+      display: none;
+    }
+    #progressBar {
+      height: 100%;
+      background: #075e54;
+      width: 0%;
+      transition: width 0.2s;
+    }
+
+    /* لوحة الإيموجي */
+    #emojiPanel {
+      display: none;
+      position: absolute;
+      bottom: 80px;
+      right: 20px;
+      background: white;
+      border-radius: 12px;
+      padding: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      z-index: 100;
+      max-width: 300px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .emoji-item {
+      font-size: 20px;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 6px;
+    }
+    .emoji-item:hover {
+      background: #f0f0f0;
+    }
+
+    /* عرض المتصلين */
+    .online-indicator {
+      font-size: 13px;
+      color: #fff;
+      background: #25D366;
+      padding: 4px 10px;
+      border-radius: 20px;
+      margin-left: 10px;
+    }
+
+    .online-list {
+      font-size: 12px;
+      color: #333;
+      background: #fff8dc;
+      padding: 6px 10px;
+      border-radius: 10px;
+      margin: 8px 16px 0;
+      display: none;
+    }
   </style>
 </head>
 <body>
   <div class="header">
     <span>دردشتي الحقيقية 🌐</span>
+    <div class="online-indicator" id="onlineCount">متصلين: 0</div>
   </div>
   
   <div class="tabs">
@@ -158,12 +225,26 @@
     <div id="statusFeed"></div>
   </div>
 
+  <div class="online-list" id="onlineList"></div>
+
   <div class="input-area" id="main-input">
     <input type="text" id="msg" placeholder="اكتب رسالة..." onkeypress="if(event.key==='Enter') sendText()" />
     <input type="file" id="imageUpload" accept="image/*,.gif" style="display:none;" />
     <button class="attach-btn" onclick="document.getElementById('imageUpload').click()">📎</button>
+    <button class="emoji-btn" onclick="toggleEmojiPanel()">😊</button>
     <button onclick="sendText()">إرسال</button>
   </div>
+
+  <div id="progressContainer">
+    <div id="progressBar"></div>
+  </div>
+
+  <div id="emojiPanel"></div>
+
+  <!-- إيموجي شائعة -->
+  <script>
+    const emojiList = ['😊', '😂', '😍', '🥰', '😎', '🤩', '🥳', '😭', '😡', '👍', '👏', '💖', '💯', '🔥', '✨', '🎉', '❤️', '🫠', '🫶', '🙏', '🚀', '🌙', '🌈', '🌸'];
+  </script>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
@@ -171,6 +252,50 @@
     let currentRoom = 'family';
     let myName = localStorage.name || prompt('ما اسمك؟') || 'زائر';
     localStorage.name = myName;
+
+    // ✅ تغيير لون الخط كل 10 ثوانٍ
+    const colors = ['#333', '#075e54', '#d32f2f', '#1976d2', '#689f38', '#f57c00', '#7b1fa2', '#00796b'];
+    let colorIndex = 0;
+    setInterval(() => {
+      const newColor = colors[colorIndex % colors.length];
+      colorIndex++;
+      document.documentElement.style.setProperty('--msg-color', newColor);
+      document.querySelectorAll('.msg').forEach(el => {
+        el.style.color = newColor;
+      });
+    }, 10000);
+
+    // عرض لوحة الإيموجي
+    function toggleEmojiPanel() {
+      const panel = document.getElementById('emojiPanel');
+      if (panel.style.display === 'flex') {
+        panel.style.display = 'none';
+      } else {
+        panel.innerHTML = '';
+        emojiList.forEach(emoji => {
+          const span = document.createElement('span');
+          span.className = 'emoji-item';
+          span.textContent = emoji;
+          span.onclick = () => {
+            const input = document.getElementById('msg');
+            input.value += emoji;
+            input.focus();
+            panel.style.display = 'none';
+          };
+          panel.appendChild(span);
+        });
+        panel.style.display = 'flex';
+      }
+    }
+
+    // إغلاق لوحة الإيموجي عند النقر خارجها
+    document.addEventListener('click', (e) => {
+      const panel = document.getElementById('emojiPanel');
+      const btn = document.querySelector('.emoji-btn');
+      if (!panel.contains(e.target) && e.target !== btn) {
+        panel.style.display = 'none';
+      }
+    });
 
     function appendMessage(name, text, isSelf, image = null) {
       const chat = document.getElementById(currentRoom === 'family' ? 'family-chat' : 'public-chat');
@@ -184,6 +309,7 @@
         div.appendChild(document.createElement('br'));
         div.appendChild(img);
       }
+      div.style.color = getComputedStyle(document.documentElement).getPropertyValue('--msg-color') || '#333';
       chat.appendChild(div);
       chat.scrollTop = chat.scrollHeight;
     }
@@ -212,8 +338,7 @@
     }
 
     function joinRoom(room) {
-      socket.emit('joinRoom', room);
-      socket.emit('loadStatuses');
+      socket.emit('joinRoom', { room, name: myName });
     }
 
     document.querySelectorAll('.tab').forEach(tab => {
@@ -226,6 +351,7 @@
         document.getElementById('public-chat').style.display = currentRoom === 'public' ? 'flex' : 'none';
         document.getElementById('status-section').style.display = currentRoom === 'status' ? 'block' : 'none';
         document.getElementById('main-input').style.display = currentRoom === 'status' ? 'none' : 'flex';
+        document.getElementById('onlineList').style.display = currentRoom === 'status' ? 'none' : 'block';
 
         if (currentRoom !== 'status') {
           joinRoom(currentRoom);
@@ -245,6 +371,16 @@
       loadStatuses(statuses);
     });
 
+    // ✅ استقبال قائمة المتصلين
+    socket.on('onlineUsers', (data) => {
+      if (data.room === currentRoom) {
+        document.getElementById('onlineCount').textContent = `متصلين: ${data.count}`;
+        const listEl = document.getElementById('onlineList');
+        listEl.innerHTML = `<b>المتصلون:</b> ${data.users.join(', ')}`;
+        listEl.style.display = 'block';
+      }
+    });
+
     function sendText() {
       const text = document.getElementById('msg').value.trim();
       if (!text) return;
@@ -252,14 +388,33 @@
       document.getElementById('msg').value = '';
     }
 
+    // ✅ شريط التقدم عند تحميل الصورة
     document.getElementById('imageUpload').addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file || !file.type.match('image/')) return;
+
+      // بدء التقدم
+      const progressContainer = document.getElementById('progressContainer');
+      const progressBar = document.getElementById('progressBar');
+      progressContainer.style.display = 'block';
+      progressBar.style.width = '0%';
+
       const reader = new FileReader();
-      reader.onload = (ev) => {
-        socket.emit('sendImage', { room: currentRoom, name: myName, image: ev.target.result });
-        e.target.value = '';
+      reader.onprogress = (ev) => {
+        if (ev.lengthComputable) {
+          const percent = Math.round((ev.loaded / ev.total) * 100);
+          progressBar.style.width = percent + '%';
+        }
       };
+
+      reader.onload = (ev) => {
+        setTimeout(() => {
+          socket.emit('sendImage', { room: currentRoom, name: myName, image: ev.target.result });
+          e.target.value = '';
+          progressContainer.style.display = 'none';
+        }, 300);
+      };
+
       reader.readAsDataURL(file);
     });
 
@@ -294,4 +449,4 @@
     joinRoom(currentRoom);
   </script>
 </body>
-      </html>
+  </html>
