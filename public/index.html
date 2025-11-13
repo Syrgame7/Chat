@@ -10,15 +10,15 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Tajawal', Arial, sans-serif;
-      background: #0d0d1a;
+      background: #fff; /* خلفية بيضاء */
+      color: #333;
       height: 100vh;
       display: flex;
       flex-direction: column;
-      color: #fff;
       overscroll-behavior: none;
     }
     .header {
-      background: rgba(7, 94, 84, 0.95);
+      background: #075e54;
       color: white;
       padding: 10px 12px;
       text-align: center;
@@ -26,13 +26,13 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
     .tabs {
       display: flex;
       background: #075e54;
       padding: 0;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
     }
     .tab {
       flex: 1;
@@ -51,6 +51,7 @@
       border-bottom: 2px solid #25D366;
     }
 
+    /* --- النجوم --- */
     .section {
       position: relative;
       flex: 1;
@@ -81,20 +82,16 @@
       100% { opacity: 0.3; }
     }
 
-    .chat, .posts {
-      background: #000;
-    }
-
     .msg {
       max-width: 75%;
       padding: 10px;
       border-radius: 16px;
       word-wrap: break-word;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       transition: background-color 0.5s ease;
     }
-    .in { background: var(--msg-in-bg, #2c2c3e); align-self: flex-start; border-bottom-left-radius: 6px; }
-    .out { background: var(--msg-out-bg, #1e3a5f); align-self: flex-end; border-bottom-right-radius: 6px; }
+    .in { background: var(--msg-in-bg, #f1f0f0); align-self: flex-start; border-bottom-left-radius: 6px; }
+    .out { background: var(--msg-out-bg, #dcf8c6); align-self: flex-end; border-bottom-right-radius: 6px; }
     
     .msg-content {
       display: flex;
@@ -110,7 +107,7 @@
       display: block;
       font-weight: 600;
       margin-bottom: 3px;
-      color: #fff;
+      color: #333;
       font-size: 13px;
     }
     .msg-text img, .msg-text audio {
@@ -123,22 +120,21 @@
     .input-area {
       display: flex;
       padding: 8px;
-      background: rgba(255,255,255,0.08);
+      background: #fff;
       gap: 6px;
-      border-top: 1px solid rgba(255,255,255,0.1);
+      border-top: 1px solid #ddd;
       align-items: center;
       flex-wrap: wrap;
     }
     .input-area input {
       flex: 1;
       padding: 8px 12px;
-      border: none;
-      background: rgba(0,0,0,0.3);
+      border: 1px solid #ddd;
       border-radius: 20px;
       font-size: 13px;
       outline: none;
       min-width: 120px;
-      color: white;
+      color: #333;
     }
     .input-area button {
       border: none;
@@ -151,8 +147,8 @@
       cursor: pointer;
       transition: background 0.2s;
     }
-    .attach-btn, .emoji-btn, .voice-btn, .call-btn {
-      background: #5c677d;
+    .attach-btn, .emoji-btn, .voice-btn {
+      background: #6c757d;
       width: 36px;
       height: 36px;
       border-radius: 50%;
@@ -169,12 +165,6 @@
       background: #d32f2f;
       animation: pulse 1.5s infinite;
     }
-    .call-btn {
-      background: #3498db;
-    }
-    .call-btn:hover {
-      background: #2980b9;
-    }
     @keyframes pulse {
       0% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.5); }
       70% { box-shadow: 0 0 0 10px rgba(211, 47, 47, 0); }
@@ -185,26 +175,26 @@
       max-width: 80%;
       margin: 10px auto;
       padding: 12px;
-      background: rgba(255,255,255,0.1);
+      background: #f8f9fa;
       border-radius: 12px;
       text-align: center;
-      backdrop-filter: blur(5px);
       font-size: 14px;
+      border: 1px solid #eee;
     }
     #statusText {
       width: 90%;
       margin: 10px auto;
       padding: 10px;
-      border: 1px solid rgba(255,255,255,0.2);
+      border: 1px solid #ddd;
       border-radius: 8px;
-      background: rgba(0,0,0,0.3);
-      color: white;
+      background: #fff;
+      color: #333;
       font-family: 'Tajawal', sans-serif;
       font-size: 14px;
     }
     #progressContainer {
       height: 5px;
-      background: rgba(255,255,255,0.1);
+      background: #eee;
       border-radius: 3px;
       margin: 6px 0;
       overflow: hidden;
@@ -221,11 +211,11 @@
       position: absolute;
       bottom: 80px;
       right: 15px;
-      background: rgba(30, 30, 46, 0.95);
-      backdrop-filter: blur(10px);
+      background: #fff;
+      border: 1px solid #ddd;
       border-radius: 10px;
       padding: 10px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.1);
       z-index: 100;
       max-width: 300px;
       display: flex;
@@ -241,7 +231,7 @@
     }
     .emoji-item:hover {
       transform: scale(1.2);
-      background: rgba(255,255,255,0.1);
+      background: #f8f9fa;
     }
     .online-indicator {
       font-size: 12px;
@@ -253,17 +243,17 @@
     }
     .online-list {
       font-size: 11px;
-      color: #e0e0ff;
-      background: rgba(255,255,255,0.08);
+      color: #666;
+      background: #f8f9fa;
       padding: 6px 10px;
       border-radius: 8px;
       margin: 8px 12px 0;
       display: none;
-      backdrop-filter: blur(5px);
+      border: 1px solid #eee;
     }
     .delivery-status {
       font-size: 11px;
-      color: #aaa;
+      color: #999;
       margin-top: 3px;
       direction: ltr;
     }
@@ -272,11 +262,11 @@
       position: fixed;
       bottom: 15px;
       left: 15px;
-      background: rgba(7, 94, 84, 0.95);
+      background: #075e54;
       color: white;
       padding: 12px 16px;
       border-radius: 12px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.2);
       z-index: 1000;
       max-width: 260px;
       display: none;
@@ -290,13 +280,14 @@
       to { transform: translateY(0); opacity: 1; }
     }
 
+    /* منشورات */
     .post {
-      background: rgba(255,255,255,0.05);
+      background: #fff;
       border-radius: 12px;
       padding: 12px;
       margin-bottom: 12px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-      border: 1px solid rgba(255,255,255,0.1);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      border: 1px solid #eee;
     }
     .post-header {
       display: flex;
@@ -308,11 +299,11 @@
       width: 28px;
       height: 28px;
       border-radius: 50%;
-      background: #4a5568;
+      background: #6c757d;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #cbd5e0;
+      color: white;
       font-weight: bold;
       font-size: 12px;
     }
@@ -335,7 +326,7 @@
       display: flex;
       gap: 12px;
       font-size: 12px;
-      color: #a0aec0;
+      color: #6c757d;
       margin-top: 8px;
     }
     .post-like {
@@ -353,15 +344,16 @@
     .post-comments {
       margin-top: 8px;
       padding-top: 8px;
-      border-top: 1px solid rgba(255,255,255,0.1);
+      border-top: 1px solid #eee;
       display: none;
     }
     .comment {
-      background: rgba(255,255,255,0.03);
+      background: #f8f9fa;
       border-radius: 8px;
       padding: 8px;
       margin: 4px 0;
       font-size: 12px;
+      border: 1px solid #eee;
     }
     .comment-header {
       display: flex;
@@ -377,27 +369,27 @@
       font-size: 12px;
     }
 
+    /* نموذج نشر منشور */
     .post-form {
-      background: rgba(255,255,255,0.05);
+      background: #fff;
       border-radius: 12px;
       padding: 12px;
       margin: 12px 0;
-      border: 1px solid rgba(255,255,255,0.1);
+      border: 1px solid #eee;
     }
     .post-form textarea {
       width: 100%;
       padding: 8px;
-      border: none;
-      background: rgba(0,0,0,0.3);
+      border: 1px solid #ddd;
       border-radius: 8px;
       font-size: 13px;
-      color: white;
+      color: #333;
       resize: none;
       min-height: 60px;
       margin-bottom: 8px;
     }
     .post-form .upload-btn {
-      background: #5c677d;
+      background: #6c757d;
       color: white;
       padding: 6px 12px;
       border-radius: 8px;
@@ -415,6 +407,7 @@
       border: none;
     }
 
+    /* زر التعليق */
     .add-comment {
       margin-top: 8px;
       display: flex;
@@ -423,83 +416,18 @@
     .add-comment input {
       flex: 1;
       padding: 6px;
-      border: none;
-      background: rgba(0,0,0,0.3);
+      border: 1px solid #ddd;
       border-radius: 8px;
       font-size: 12px;
-      color: white;
+      color: #333;
     }
     .add-comment button {
-      background: #5c677d;
+      background: #6c757d;
       color: white;
       padding: 6px 12px;
       border-radius: 8px;
       font-size: 12px;
       cursor: pointer;
-    }
-
-    /* شاشة المكالمة */
-    #callModal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.9);
-      z-index: 2000;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      color: white;
-    }
-    #callInfo {
-      font-size: 24px;
-      margin-bottom: 20px;
-    }
-    #callButtons {
-      display: flex;
-      gap: 30px;
-    }
-    .call-control-btn {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      border: none;
-      color: white;
-      font-size: 24px;
-      cursor: pointer;
-    }
-    #acceptCall {
-      background: #2ecc71;
-    }
-    #rejectCall, #endCall {
-      background: #e74c3c;
-    }
-    #endCall {
-      margin-top: 30px;
-      display: none;
-      width: auto;
-      height: auto;
-      border-radius: 8px;
-      padding: 10px 20px;
-      font-size: 16px;
-    }
-
-    /* تحذير الصوت */
-    .audio-warning {
-      background: #e74c3c;
-      color: white;
-      padding: 8px;
-      border-radius: 8px;
-      margin: 8px 16px 0;
-      text-align: center;
-      display: none;
-      z-index: 1001;
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
     }
   </style>
 </head>
@@ -516,20 +444,26 @@
     <div class="tab" data-room="posts">منشورات</div>
   </div>
 
-  <div id="family-chat" class="section chat">
+  <!-- عائلة -->
+  <div id="family-chat" class="section">
     <div class="stars" id="stars-family"></div>
   </div>
-  <div id="public-chat" class="section chat" style="display:none;">
+
+  <!-- عامة -->
+  <div id="public-chat" class="section" style="display:none;">
     <div class="stars" id="stars-public"></div>
   </div>
-  <div id="status-section" class="section chat" style="display:none;">
+
+  <!-- حالات -->
+  <div id="status-section" class="section" style="display:none;">
     <div class="stars" id="stars-status"></div>
     <input type="text" id="statusText" placeholder="اكتب حالتك..." />
     <button onclick="postStatus()" style="margin:8px auto; display:block; padding:6px 16px; background:#075e54; color:white; border:none; border-radius:6px; font-size:13px;">نشر الحالة</button>
     <div id="statusFeed"></div>
   </div>
 
-  <div id="posts-section" class="section posts" style="display:none;">
+  <!-- منشورات -->
+  <div id="posts-section" class="section" style="display:none;">
     <div class="stars" id="stars-posts"></div>
     <div class="post-form">
       <textarea id="postText" placeholder="اكتب شرح المنشور..."></textarea>
@@ -548,7 +482,6 @@
     <button class="attach-btn" onclick="document.getElementById('imageUpload').click()">📎</button>
     <button class="emoji-btn" onclick="toggleEmojiPanel()">😊</button>
     <button class="voice-btn" onclick="recordAudio()">🎤</button>
-    <button class="call-btn" onclick="startVoiceCall()">📞</button>
     <button onclick="sendText()">إرسال</button>
   </div>
 
@@ -563,24 +496,6 @@
     <span id="notifText"></span>
   </div>
 
-  <!-- تحذير الصوت -->
-  <div id="audioWarning" class="audio-warning">
-    ⚠️ اضغط في أي مكان لتفعيل الصوت
-  </div>
-
-  <!-- شاشة المكالمة -->
-  <div id="callModal">
-    <div id="callInfo">مكالمة واردة...</div>
-    <div id="callButtons">
-      <button id="acceptCall" class="call-control-btn">✓</button>
-      <button id="rejectCall" class="call-control-btn">✕</button>
-    </div>
-    <button id="endCall" class="call-control-btn">إنهاء المكالمة</button>
-  </div>
-
-  <!-- صوت المكالمة -->
-  <audio id="remoteAudio" autoplay style="display:none;"></audio>
-
   <script>
     const emojiList = ['😊', '😂', '😍', '🥰', '😎', '🤩', '🥳', '😭', '😡', '👍', '👏', '💖', '💯', '🔥', '✨', '🎉', '❤️', '🫠', '🫶', '🙏'];
   </script>
@@ -592,6 +507,7 @@
     let myName = localStorage.name || prompt('ما اسمك؟') || 'زائر';
     localStorage.name = myName;
 
+    // --- الصوت ---
     let audioContext = null;
     let soundsEnabled = false;
 
@@ -624,6 +540,7 @@
     document.body.addEventListener('click', initAudio, { once: true });
     document.body.addEventListener('touchstart', initAudio, { once: true });
 
+    // --- الإشعارات الداخلية ---
     const unreadCounts = { family: 0, public: 0 };
 
     function showInAppNotification(name, text, room) {
@@ -645,6 +562,7 @@
       }
     }
 
+    // --- عرض الرسالة ---
     function appendMessage(name, text, isSelf, image = null, audio = null) {
       const chat = document.getElementById(currentRoom === 'family' ? 'family-chat' : 'public-chat');
       const div = document.createElement('div');
@@ -654,7 +572,7 @@
       if (text) {
         const urlRegex = /(https?:\/\/[^\s]+)/g;
         processedText = text.replace(urlRegex, url => 
-          `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color:#25D366;text-decoration:underline;">${url}</a>`
+          `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color:#075e54;text-decoration:underline;">${url}</a>`
         );
       }
 
@@ -686,6 +604,7 @@
       }
     }
 
+    // --- تحميل الرسائل ---
     function loadMessages(room, msgs) {
       const chat = document.getElementById(room === 'family' ? 'family-chat' : 'public-chat');
       chat.innerHTML = '';
@@ -700,6 +619,7 @@
       });
     }
 
+    // --- تحميل الحالات ---
     function loadStatuses(statuses) {
       const feed = document.getElementById('statusFeed');
       feed.innerHTML = '';
@@ -711,6 +631,7 @@
       });
     }
 
+    // --- المنشورات ---
     let posts = [];
 
     function renderPosts() {
@@ -839,21 +760,12 @@
 
     socket.on('loadStatuses', (statuses) => loadStatuses(statuses);
 
-    let usersInRoom = {};
-
     socket.on('onlineUsers', (data) => {
       if (data.room === currentRoom) {
         document.getElementById('onlineCount').textContent = `متصلين: ${data.count}`;
         const listEl = document.getElementById('onlineList');
         listEl.innerHTML = `<b>المتصلون:</b> ${data.users.join(', ')}`;
         listEl.style.display = 'block';
-
-        usersInRoom = {};
-        if (data.usersWithId) {
-          data.usersWithId.forEach(user => {
-            usersInRoom[user.id] = user.name;
-          });
-        }
       }
     });
 
@@ -972,15 +884,16 @@
       feed.prepend(div);
     });
 
+    // --- ألوان الفقاعات الديناميكية ---
     const bubbleColors = [
-      { in: '#2c2c3e', out: '#1e3a5f' },
-      { in: '#2d3748', out: '#2b6cb0' },
-      { in: '#2f2f47', out: '#4c51bf' },
-      { in: '#2c3a47', out: '#38ada9' },
-      { in: '#2f3542', out: '#ff6b81' },
-      { in: '#2c2e3e', out: '#55efc4' },
-      { in: '#2d3436', out: '#fdcb6e' },
-      { in: '#2f3640', out: '#a29bfe' }
+      { in: '#f1f0f0', out: '#dcf8c6' },
+      { in: '#e9ecef', out: '#bee5eb' },
+      { in: '#f8f9fa', out: '#d4edda' },
+      { in: '#f1f3f5', out: '#fff3cd' },
+      { in: '#e2e3e5', out: '#f8d7da' },
+      { in: '#e7f1ff', out: '#d1ecf1' },
+      { in: '#fefefe', out: '#e2e9ff' },
+      { in: '#f8f9fa', out: '#f1f3f5' }
     ];
 
     let colorIndex = 0;
@@ -994,6 +907,7 @@
       document.querySelectorAll('.msg.out').forEach(el => el.style.backgroundColor = colors.out);
     }, 15000);
 
+    // --- لوحة الإيموجي ---
     function toggleEmojiPanel() {
       const panel = document.getElementById('emojiPanel');
       if (panel.style.display === 'flex') {
@@ -1023,212 +937,7 @@
       }
     });
 
-    // --- نظام المكالمات الصوتية ---
-    let peerConnection = null;
-    let currentCallSocketId = null;
-    let audioStream = null;
-
-    function endCall() {
-      if (audioStream) {
-        audioStream.getTracks().forEach(track => track.stop());
-      }
-      if (peerConnection) {
-        peerConnection.close();
-        peerConnection = null;
-      }
-      currentCallSocketId = null;
-      document.getElementById('callModal').style.display = 'none';
-    }
-
-    async function startVoiceCall() {
-      if (!usersInRoom || Object.keys(usersInRoom).length < 2) {
-        alert('لا يوجد مستخدمين آخرين في الغرفة!');
-        return;
-      }
-
-      const otherUsers = Object.keys(usersInRoom).filter(id => id !== socket.id);
-      if (otherUsers.length === 0) {
-        alert('لا يوجد مستخدمين آخرين!');
-        return;
-      }
-
-      const targetSocketId = otherUsers[0];
-      const targetName = usersInRoom[targetSocketId];
-
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-        audioStream = stream;
-
-        const config = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
-        peerConnection = new RTCPeerConnection(config);
-
-        stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
-
-        const offer = await peerConnection.createOffer();
-        await peerConnection.setLocalDescription(offer);
-
-        socket.emit('callUser', {
-          toSocketId: targetSocketId,
-          fromName: myName,
-          fromSocketId: socket.id,
-          offer: peerConnection.localDescription
-        });
-
-        currentCallSocketId = targetSocketId;
-
-        document.getElementById('callInfo').textContent = `جاري الاتصال بـ ${targetName}...`;
-        document.getElementById('callModal').style.display = 'flex';
-        document.getElementById('callButtons').style.display = 'none';
-        document.getElementById('endCall').style.display = 'block';
-
-        // تفعيل الصوت
-        enableAudioContext();
-        showAudioWarning();
-
-        peerConnection.onicecandidate = (event) => {
-          if (event.candidate) {
-            socket.emit('iceCandidate', {
-              toSocketId: targetSocketId,
-              candidate: event.candidate
-            });
-          }
-        };
-
-        peerConnection.ontrack = (event) => {
-          const remoteAudio = document.getElementById('remoteAudio');
-          remoteAudio.srcObject = event.streams[0];
-          remoteAudio.play().catch(err => {
-            console.warn('فشل تشغيل الصوت:', err);
-            showAudioWarning();
-          });
-        };
-
-      } catch (err) {
-        alert('فشل بدء المكالمة: ' + (err.message || 'الإذن مرفوض'));
-        endCall();
-      }
-    }
-
-    socket.on('incomingCall', async (data) => {
-      if (currentCallSocketId) return;
-
-      if (confirm(`مكالمة صوتية من ${data.from} — هل تريد الرد؟`)) {
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-          audioStream = stream;
-
-          const config = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
-          peerConnection = new RTCPeerConnection(config);
-          currentCallSocketId = data.fromSocketId;
-
-          stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
-
-          await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
-          const answer = await peerConnection.createAnswer();
-          await peerConnection.setLocalDescription(answer);
-
-          socket.emit('acceptCall', {
-            toSocketId: data.fromSocketId,
-            answer: peerConnection.localDescription
-          });
-
-          peerConnection.onicecandidate = (event) => {
-            if (event.candidate) {
-              socket.emit('iceCandidate', {
-                toSocketId: data.fromSocketId,
-                candidate: event.candidate
-              });
-            }
-          };
-
-          peerConnection.ontrack = (event) => {
-            const remoteAudio = document.getElementById('remoteAudio');
-            remoteAudio.srcObject = event.streams[0];
-            remoteAudio.play().catch(err => {
-              console.warn('فشل تشغيل الصوت:', err);
-              showAudioWarning();
-            });
-          };
-
-          document.getElementById('callInfo').textContent = `مكالمة مع ${data.from}`;
-          document.getElementById('callModal').style.display = 'flex';
-          document.getElementById('callButtons').style.display = 'none';
-          document.getElementById('endCall').style.display = 'block';
-
-          enableAudioContext();
-          showAudioWarning();
-
-        } catch (err) {
-          alert('فشل الرد على المكالمة');
-          endCall();
-        }
-      } else {
-        socket.emit('callEnded', { toSocketId: data.fromSocketId });
-      }
-    });
-
-    socket.on('callAccepted', async (data) => {
-      try {
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-        peerConnection.ontrack = (event) => {
-          const remoteAudio = document.getElementById('remoteAudio');
-          remoteAudio.srcObject = event.streams[0];
-          remoteAudio.play().catch(err => {
-            console.warn('فشل تشغيل الصوت:', err);
-            showAudioWarning();
-          });
-        };
-        document.getElementById('callInfo').textContent = 'المكالمة متصلة!';
-      } catch (err) {
-        alert('فشل توصيل المكالمة');
-        endCall();
-      }
-    });
-
-    socket.on('iceCandidate', (candidate) => {
-      if (peerConnection) {
-        peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-      }
-    });
-
-    socket.on('callEnded', () => {
-      endCall();
-    });
-
-    document.getElementById('rejectCall').onclick = () => {
-      if (currentCallSocketId) {
-        socket.emit('callEnded', { toSocketId: currentCallSocketId });
-      }
-      endCall();
-    };
-
-    document.getElementById('endCall').onclick = () => {
-      if (currentCallSocketId) {
-        socket.emit('callEnded', { toSocketId: currentCallSocketId });
-      }
-      endCall();
-    };
-
-    function enableAudioContext() {
-      if (audioContext && audioContext.state === 'suspended') {
-        audioContext.resume().then(() => {
-          console.log('✅ تم تفعيل الصوت');
-        }).catch(err => {
-          console.warn('فشل تفعيل الصوت:', err);
-        });
-      }
-    }
-
-    function showAudioWarning() {
-      document.getElementById('audioWarning').style.display = 'block';
-      setTimeout(() => {
-        document.getElementById('audioWarning').style.display = 'none';
-      }, 5000);
-    }
-
-    document.addEventListener('click', enableAudioContext, { once: true });
-    document.addEventListener('touchstart', enableAudioContext, { once: true });
-
+    // --- النجوم المتحركة ---
     function createStars(containerId) {
       const starsContainer = document.getElementById(containerId);
       starsContainer.innerHTML = '';
@@ -1244,11 +953,13 @@
       }
     }
 
+    // توليد النجوم عند التحميل
     createStars('stars-family');
     createStars('stars-public');
     createStars('stars-status');
     createStars('stars-posts');
 
+    // إعادة توليد النجوم عند تغيير الحجم
     window.addEventListener('resize', () => {
       createStars('stars-family');
       createStars('stars-public');
@@ -1256,25 +967,8 @@
       createStars('stars-posts');
     });
 
-    socket.on('allPosts', (allPosts) => {
-      posts = allPosts;
-      renderPosts();
-    });
-
-    socket.on('newPost', (post) => {
-      posts.push(post);
-      renderPosts();
-    });
-
-    socket.on('updatePost', (updatedPost) => {
-      const index = posts.findIndex(p => p.id === updatedPost.id);
-      if (index !== -1) {
-        posts[index] = updatedPost;
-        renderPosts();
-      }
-    });
-
+    // --- بدء ---
     joinRoom(currentRoom);
   </script>
 </body>
-  </html>
+      </html>
