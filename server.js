@@ -1,5 +1,3 @@
-// server.js (محدّث)
-
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
@@ -21,7 +19,7 @@ const messages = {
   status: []
 };
 
-// ✅ تتبع المستخدمين المتصلين في كل غرفة
+// تتبع المستخدمين المتصلين
 const users = {
   family: {},
   public: {}
@@ -37,23 +35,15 @@ io.on('connection', (socket) => {
   let currentRoom = null;
   let userName = null;
 
-  // عند انضمام المستخدم
   socket.on('joinRoom', (data) => {
     const { room, name } = data;
     userName = name;
     currentRoom = room;
 
-    // مغادرة الغرفة القديمة إن وُجدت
-    if (socket.rooms.has(room)) socket.leave(room);
-
-    // الانضمام للغرفة الجديدة
     socket.join(room);
     users[room][socket.id] = name;
 
-    // إرسال الرسائل القديمة
     socket.emit('loadMessages', { room, messages: messages[room] || [] });
-
-    // تحديث قائمة المتصلين
     updateOnlineUsers(room);
   });
 
@@ -79,7 +69,6 @@ io.on('connection', (socket) => {
     io.emit('newStatus', data);
   });
 
-  // ✅ عند الانفصال
   socket.on('disconnect', () => {
     if (currentRoom && users[currentRoom]) {
       delete users[currentRoom][socket.id];
@@ -87,7 +76,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // دالة تحديث المتصلين
   function updateOnlineUsers(room) {
     const userList = Object.values(users[room] || {});
     io.to(room).emit('onlineUsers', { room, users: userList, count: userList.length });
@@ -96,5 +84,5 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`الخادم يعمل على المنفذ ${PORT}`);
+  console.log(`✅ الخادم يعمل على: http://localhost:${PORT}`);
 });
