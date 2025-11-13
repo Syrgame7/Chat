@@ -633,15 +633,15 @@
     }
 
     // منشورات
-    let posts = JSON.parse(localStorage.getItem('posts') || '[]');
+    let posts = [];
 
     function renderPosts() {
       const feed = document.getElementById('postsFeed');
       feed.innerHTML = '';
-      posts.slice().reverse().forEach((post, index) => {
+      posts.slice().reverse().forEach(post => {
         const div = document.createElement('div');
         div.className = 'post';
-        div.dataset.index = index;
+        div.dataset.id = post.id;
         div.innerHTML = `
           <div class="post-header">
             <div class="post-avatar">${post.name.charAt(0)}</div>
@@ -650,10 +650,10 @@
           <div class="post-text">${post.text}</div>
           ${post.image ? `<img class="post-image" src="${post.image}" />` : ''}
           <div class="post-actions">
-            <span class="post-like" onclick="likePost(${index})">👍 ${post.likes || 0}</span>
-            <span class="post-comment" onclick="toggleComments(${index})">💬 ${post.comments?.length || 0}</span>
+            <span class="post-like" onclick="likePost(${post.id})">👍 ${post.likes || 0}</span>
+            <span class="post-comment" onclick="toggleComments(${post.id})">💬 ${post.comments?.length || 0}</span>
           </div>
-          <div class="post-comments" id="comments-${index}">
+          <div class="post-comments" id="comments-${post.id}">
             ${post.comments?.map(comment => `
               <div class="comment">
                 <div class="comment-header">
@@ -664,8 +664,8 @@
               </div>
             `).join('') || ''}
             <div class="add-comment">
-              <input type="text" id="commentInput-${index}" placeholder="اكتب تعليقك..." />
-              <button onclick="addComment(${index})">إرسال</button>
+              <input type="text" id="commentInput-${post.id}" placeholder="اكتب تعليقك..." />
+              <button onclick="addComment(${post.id})">إرسال</button>
             </div>
           </div>
         `;
@@ -682,47 +682,48 @@
         return;
       }
 
-      const post = {
-        name: myName,
-        text: text,
-        image: file ? URL.createObjectURL(file) : null,
-        time: Date.now(),
-        likes: 0,
-        comments: []
-      };
-
-      posts.push(post);
-      localStorage.setItem('posts', JSON.stringify(posts));
-      renderPosts();
-      document.getElementById('postText').value = '';
-      document.getElementById('postImage').value = '';
+      const reader = file ? new FileReader() : null;
+      if (reader) {
+        reader.onload = (ev) => {
+          socket.emit('publishPost', {
+            name: myName,
+            text: text,
+            image: ev.target.result
+          });
+          document.getElementById('postText').value = '';
+          document.getElementById('postImage').value = '';
+        };
+        reader.readAsDataURL(file);
+      } else {
+        socket.emit('publishPost', {
+          name: myName,
+          text: text,
+          image: null
+        });
+        document.getElementById('postText').value = '';
+      }
     }
 
-    function likePost(index) {
-      posts[index].likes = (posts[index].likes || 0) + 1;
-      localStorage.setItem('posts', JSON.stringify(posts));
-      renderPosts();
+    function likePost(id) {
+      socket.emit('likePost', id);
     }
 
-    function toggleComments(index) {
-      const commentsDiv = document.getElementById(`comments-${index}`);
+    function toggleComments(id) {
+      const commentsDiv = document.getElementById(`comments-${id}`);
       commentsDiv.style.display = commentsDiv.style.display === 'block' ? 'none' : 'block';
     }
 
-    function addComment(index) {
-      const input = document.getElementById(`commentInput-${index}`);
+    function addComment(id) {
+      const input = document.getElementById(`commentInput-${id}`);
       const text = input.value.trim();
       if (!text) return;
 
-      posts[index].comments = posts[index].comments || [];
-      posts[index].comments.push({
+      socket.emit('addComment', {
+        postId: id,
         name: myName,
-        text: text,
-        time: Date.now()
+        text: text
       });
 
-      localStorage.setItem('posts', JSON.stringify(posts));
-      renderPosts();
       input.value = '';
     }
 
@@ -749,7 +750,7 @@
           tab.textContent = baseName;
           joinRoom(currentRoom);
         } else if (currentRoom === 'posts') {
-          renderPosts();
+          socket.emit('loadPosts');
         } else {
           socket.emit('loadStatuses', []);
         }
@@ -967,6 +968,25 @@
       createStars('stars-public');
       createStars('stars-status');
       createStars('stars-posts');
+    });
+
+    // استقبال المنشورات
+    socket.on('allPosts', (allPosts) => {
+      posts = allPosts;
+      renderPosts();
+    });
+
+    socket.on('newPost', (post) => {
+      posts.push(post);
+      renderPosts();
+    });
+
+    socket.on('updatePost', (updatedPost) => {
+      const index = posts.findIndex(p => p.id === updatedPost.id);
+      if (index !== -1) {
+        posts[index] = updatedPost;
+        renderPosts();
+      }
     });
 
     joinRoom(currentRoom);
