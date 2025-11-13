@@ -311,12 +311,10 @@
       if (currentRoom !== room) {
         unreadCounts[room]++;
 
-        // تحديث اسم التبويب
         const tab = document.querySelector(`.tab[data-room="${room}"]`);
         const baseName = room === 'family' ? 'عائلة' : 'عامة';
         tab.textContent = `${baseName} (${unreadCounts[room]})`;
 
-        // عرض الفقاعة
         const notif = document.getElementById('inAppNotification');
         document.getElementById('notifName').textContent = name;
         document.getElementById('notifText').textContent = text || 'أرسل صورة';
@@ -328,11 +326,12 @@
       }
     }
 
-    function appendMessage(name, text, isSelf, image = null, delivered = false) {
+    // ✅ دالة عرض الرسالة الوحيدة (تُستخدم فقط عند الاستلام من الخادم)
+    function appendMessage(name, text, isSelf, image = null) {
       const chat = document.getElementById(currentRoom === 'family' ? 'family-chat' : 'public-chat');
       const div = document.createElement('div');
       div.className = isSelf ? 'msg out' : 'msg in';
-      const statusText = isSelf ? (delivered ? '✓✓' : '✓') : '';
+      const statusText = isSelf ? '✓✓' : '';
       div.innerHTML = `<b>${name}:</b> ${text || ''} ${statusText ? `<span class="delivery-status">${statusText}</span>` : ''}`;
       if (image) {
         const img = document.createElement('img');
@@ -352,7 +351,7 @@
       const chat = document.getElementById(room === 'family' ? 'family-chat' : 'public-chat');
       chat.innerHTML = '';
       msgs.forEach(msg => {
-        appendMessage(msg.name, msg.text, msg.name === myName, msg.image, true);
+        appendMessage(msg.name, msg.text, msg.name === myName, msg.image);
       });
     }
 
@@ -383,14 +382,10 @@
         document.getElementById('main-input').style.display = currentRoom === 'status' ? 'none' : 'flex';
         document.getElementById('onlineList').style.display = currentRoom === 'status' ? 'none' : 'block';
 
-        // مسح العداد عند الدخول
         if (currentRoom !== 'status') {
           unreadCounts[currentRoom] = 0;
           const baseName = currentRoom === 'family' ? 'عائلة' : 'عامة';
           tab.textContent = baseName;
-        }
-
-        if (currentRoom !== 'status') {
           joinRoom(currentRoom);
         } else {
           socket.emit('loadStatuses');
@@ -413,15 +408,16 @@
       }
     });
 
+    // ✅ إصلاح: لا نعرض الرسالة محليًا عند الإرسال
     function sendText() {
       const text = document.getElementById('msg').value.trim();
       if (!text) return;
-      appendMessage(myName, text, true, null, false);
       socket.emit('sendMessage', { room: currentRoom, name: myName, text });
       playSendSound();
       document.getElementById('msg').value = '';
     }
 
+    // ✅ إصلاح: لا نعرض الصورة محليًا عند الإرسال
     document.getElementById('imageUpload').addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file || !file.type.match('image/')) return;
@@ -440,7 +436,6 @@
       };
 
       reader.onload = (ev) => {
-        appendMessage(myName, '', true, ev.target.result, false);
         socket.emit('sendImage', { room: currentRoom, name: myName, image: ev.target.result });
         playSendSound();
         e.target.value = '';
@@ -457,17 +452,20 @@
       document.getElementById('statusText').value = '';
     }
 
+    // ✅ استلام الرسائل من الخادم (تظهر لك وللجميع)
     socket.on('receiveMessage', (data) => {
+      const isSelf = data.name === myName;
       if (data.room === currentRoom) {
-        appendMessage(data.name, data.text, data.name === myName, null, true);
+        appendMessage(data.name, data.text, isSelf, null);
       } else {
         showInAppNotification(data.name, data.text, data.room);
       }
     });
 
     socket.on('receiveImage', (data) => {
+      const isSelf = data.name === myName;
       if (data.room === currentRoom) {
-        appendMessage(data.name, '', data.name === myName, data.image, true);
+        appendMessage(data.name, '', isSelf, data.image);
       } else {
         showInAppNotification(data.name, 'أرسل صورة', data.room);
       }
@@ -523,4 +521,4 @@
     joinRoom(currentRoom);
   </script>
 </body>
-                            </html>
+    </html>
