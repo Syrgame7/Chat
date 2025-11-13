@@ -51,7 +51,6 @@
       border-bottom: 2px solid #25D366;
     }
 
-    /* خلفية فضائية */
     .section {
       position: relative;
       flex: 1;
@@ -82,7 +81,6 @@
       100% { opacity: 0.3; }
     }
 
-    /* الخلفية سوداء بحتة */
     .chat, .posts {
       background: #000;
     }
@@ -172,10 +170,10 @@
       animation: pulse 1.5s infinite;
     }
     .call-btn {
-      background: #e74c3c;
+      background: #3498db;
     }
     .call-btn:hover {
-      background: #c0392b;
+      background: #2980b9;
     }
     @keyframes pulse {
       0% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.5); }
@@ -292,7 +290,6 @@
       to { transform: translateY(0); opacity: 1; }
     }
 
-    /* منشورات */
     .post {
       background: rgba(255,255,255,0.05);
       border-radius: 12px;
@@ -380,7 +377,6 @@
       font-size: 12px;
     }
 
-    /* نموذج نشر منشور */
     .post-form {
       background: rgba(255,255,255,0.05);
       border-radius: 12px;
@@ -419,7 +415,6 @@
       border: none;
     }
 
-    /* زر التعليق */
     .add-comment {
       margin-top: 8px;
       display: flex;
@@ -441,6 +436,54 @@
       border-radius: 8px;
       font-size: 12px;
       cursor: pointer;
+    }
+
+    /* شاشة المكالمة */
+    #callModal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 2000;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+    #callInfo {
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+    #callButtons {
+      display: flex;
+      gap: 30px;
+    }
+    .call-control-btn {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: none;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+    }
+    #acceptCall {
+      background: #2ecc71;
+    }
+    #rejectCall, #endCall {
+      background: #e74c3c;
+    }
+    #endCall {
+      margin-top: 30px;
+      display: none;
+      width: auto;
+      height: auto;
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 16px;
     }
   </style>
 </head>
@@ -489,7 +532,7 @@
     <button class="attach-btn" onclick="document.getElementById('imageUpload').click()">📎</button>
     <button class="emoji-btn" onclick="toggleEmojiPanel()">😊</button>
     <button class="voice-btn" onclick="recordAudio()">🎤</button>
-    <button class="call-btn" onclick="startJitsiCall()">📞</button>
+    <button class="call-btn" onclick="startVoiceCall()">📞</button>
     <button onclick="sendText()">إرسال</button>
   </div>
 
@@ -503,6 +546,19 @@
     <b id="notifName"></b><br>
     <span id="notifText"></span>
   </div>
+
+  <!-- شاشة المكالمة -->
+  <div id="callModal">
+    <div id="callInfo">مكالمة واردة...</div>
+    <div id="callButtons">
+      <button id="acceptCall" class="call-control-btn">✓</button>
+      <button id="rejectCall" class="call-control-btn">✕</button>
+    </div>
+    <button id="endCall" class="call-control-btn">إنهاء المكالمة</button>
+  </div>
+
+  <!-- صوت المكالمة -->
+  <audio id="remoteAudio" autoplay style="display:none;"></audio>
 
   <script>
     const emojiList = ['😊', '😂', '😍', '🥰', '😎', '🤩', '🥳', '😭', '😡', '👍', '👏', '💖', '💯', '🔥', '✨', '🎉', '❤️', '🫠', '🫶', '🙏'];
@@ -568,7 +624,6 @@
       }
     }
 
-    // ✅ دالة عرض الرسالة مع دعم الروابط القابلة للنقر
     function appendMessage(name, text, isSelf, image = null, audio = null) {
       const chat = document.getElementById(currentRoom === 'family' ? 'family-chat' : 'public-chat');
       const div = document.createElement('div');
@@ -751,8 +806,6 @@
           const baseName = currentRoom === 'family' ? 'عائلة' : 'عامة';
           tab.textContent = baseName;
           joinRoom(currentRoom);
-        } else if (currentRoom === 'posts') {
-          socket.emit('loadPosts');
         } else {
           socket.emit('loadStatuses', []);
         }
@@ -940,16 +993,194 @@
       }
     });
 
-    // ✅ دالة مكالمة Jitsi مع إرسال الرابط في الدردشة
-    function startJitsiCall() {
-      const roomName = 'drdshati-' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
-      const jitsiUrl = `https://meet.jit.si/${roomName}`;
-      
-      const messageText = `📞 دعوة لمكالمة! انقر للانضمام: ${jitsiUrl}`;
-      socket.emit('sendMessage', { room: currentRoom, name: myName, text: messageText });
-      
-      showInAppNotification('دردشتي', 'تم إرسال رابط المكالمة في الدردشة!');
+    // --- نظام المكالمات الصوتية ---
+    let peerConnection = null;
+    let currentCallSocketId = null;
+    let audioStream = null;
+    let usersInRoom = {}; // { socketId: name }
+
+    function endCall() {
+      if (audioStream) {
+        audioStream.getTracks().forEach(track => track.stop());
+      }
+      if (peerConnection) {
+        peerConnection.close();
+        peerConnection = null;
+      }
+      currentCallSocketId = null;
+      document.getElementById('callModal').style.display = 'none';
     }
+
+    async function startVoiceCall() {
+      // تحديث قائمة المستخدمين من الخادم (سيتم دعمها لاحقًا)
+      const activeTab = document.querySelector('.tab.active');
+      if (!activeTab) return;
+
+      // محاولة بسيطة: إذا كان هناك أكثر من شخص
+      const onlineCount = parseInt(document.getElementById('onlineCount').textContent.replace('متصلين: ', ''));
+      if (onlineCount < 2) {
+        alert('لا يوجد مستخدمين آخرين في الغرفة!');
+        return;
+      }
+
+      // في تطبيق حقيقي، نحتاج معرفة socketId للطرف الآخر
+      // لكن هنا سنستخدم طريقة مبسطة: إرسال إلى الجميع في الغرفة
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        audioStream = stream;
+
+        const config = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+        peerConnection = new RTCPeerConnection(config);
+
+        stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
+
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
+
+        // إرسال طلب المكالمة إلى الجميع في الغرفة
+        socket.emit('callUser', {
+          room: currentRoom,
+          fromName: myName,
+          offer: peerConnection.localDescription
+        });
+
+        currentCallSocketId = 'broadcast'; // مؤقت
+
+        // عرض شاشة الانتظار
+        document.getElementById('callInfo').textContent = 'جاري الاتصال...';
+        document.getElementById('callButtons').style.display = 'none';
+        document.getElementById('endCall').style.display = 'block';
+        document.getElementById('callModal').style.display = 'flex';
+
+        peerConnection.onicecandidate = (event) => {
+          if (event.candidate) {
+            socket.emit('iceCandidate', {
+              room: currentRoom,
+              candidate: event.candidate
+            });
+          }
+        };
+
+        peerConnection.ontrack = (event) => {
+          const remoteAudio = document.getElementById('remoteAudio');
+          remoteAudio.srcObject = event.streams[0];
+        };
+
+      } catch (err) {
+        alert('فشل بدء المكالمة: ' + (err.message || 'الإذن مرفوض'));
+        endCall();
+      }
+    }
+
+    // استقبال طلب مكالمة
+    socket.on('incomingCall', async (data) => {
+      if (currentCallSocketId) {
+        // مكالمة نشطة
+        return;
+      }
+
+      if (confirm(`مكالمة صوتية من ${data.from} — هل تريد الرد؟`)) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+          audioStream = stream;
+
+          const config = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+          peerConnection = new RTCPeerConnection(config);
+          currentCallSocketId = data.fromSocketId;
+
+          stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
+
+          await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+          const answer = await peerConnection.createAnswer();
+          await peerConnection.setLocalDescription(answer);
+
+          socket.emit('acceptCall', {
+            toSocketId: data.fromSocketId,
+            answer: peerConnection.localDescription
+          });
+
+          peerConnection.onicecandidate = (event) => {
+            if (event.candidate) {
+              socket.emit('iceCandidate', {
+                toSocketId: data.fromSocketId,
+                candidate: event.candidate
+              });
+            }
+          };
+
+          peerConnection.ontrack = (event) => {
+            const remoteAudio = document.getElementById('remoteAudio');
+            remoteAudio.srcObject = event.streams[0];
+          };
+
+          // عرض شاشة المكالمة
+          document.getElementById('callInfo').textContent = `مكالمة مع ${data.from}`;
+          document.getElementById('callButtons').style.display = 'none';
+          document.getElementById('endCall').style.display = 'block';
+          document.getElementById('callModal').style.display = 'flex';
+
+        } catch (err) {
+          alert('فشل الرد على المكالمة');
+          endCall();
+        }
+      } else {
+        socket.emit('callEnded', { toSocketId: data.fromSocketId });
+      }
+    });
+
+    // قبول المكالمة
+    socket.on('callAccepted', async (data) => {
+      try {
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+
+        peerConnection.ontrack = (event) => {
+          const remoteAudio = document.getElementById('remoteAudio');
+          remoteAudio.srcObject = event.streams[0];
+        };
+
+        document.getElementById('callInfo').textContent = 'المكالمة متصلة!';
+      } catch (err) {
+        alert('فشل توصيل المكالمة');
+        endCall();
+      }
+    });
+
+    // ICE candidates
+    socket.on('iceCandidate', (candidate) => {
+      if (peerConnection) {
+        peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+      }
+    });
+
+    // إنهاء المكالمة
+    socket.on('callEnded', () => {
+      endCall();
+    });
+
+    // أزرار شاشة المكالمة
+    document.getElementById('rejectCall').onclick = () => {
+      if (currentCallSocketId) {
+        socket.emit('callEnded', { toSocketId: currentCallSocketId });
+      }
+      endCall();
+    };
+
+    document.getElementById('endCall').onclick = () => {
+      if (currentCallSocketId) {
+        socket.emit('callEnded', { toSocketId: currentCallSocketId });
+      }
+      endCall();
+    };
+
+    // تحديث قائمة المتصلين (سيتم دعم socketId لاحقًا)
+    socket.on('onlineUsers', (data) => {
+      if (data.room === currentRoom) {
+        document.getElementById('onlineCount').textContent = `متصلين: ${data.count}`;
+        const listEl = document.getElementById('onlineList');
+        listEl.innerHTML = `<b>المتصلون:</b> ${data.users.join(', ')}`;
+        listEl.style.display = 'block';
+      }
+    });
 
     function createStars(containerId) {
       const starsContainer = document.getElementById(containerId);
@@ -999,4 +1230,4 @@
     joinRoom(currentRoom);
   </script>
 </body>
-  </html>
+      </html>
