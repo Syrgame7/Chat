@@ -34,7 +34,7 @@
   </div>
 
   <script>
-    // تخزين الرسائل مؤقتًا في الذاكرة
+    // تخزين الرسائل مؤقتًا في localStorage
     let messages = JSON.parse(localStorage.getItem('messages') || '[]');
 
     function displayMessages() {
@@ -102,27 +102,6 @@
     }
 
     displayMessages();
-  </script>
-</body>
-</html> new Blob(chunks, { type: 'audio/webm' });
-        const filename = `audio/${Date.now()}.webm`;
-        const uploadTask = storage.ref(filename).put(blob);
-        const snapshot = await uploadTask;
-        const audioUrl = await snapshot.ref.getDownloadURL();
-        db.ref('messages').push({
-          name: localStorage.name || 'زائر',
-          audioUrl: audioUrl,
-          uid: getUid(),
-          time: Date.now()
-        });
-      };
-    }
-
-    // اسم المستخدم
-    if (!localStorage.name) {
-      const name = prompt('اكتب اسمك:') || 'زائر';
-      localStorage.name = name;
-    }
   </script>
 </body>
 </html>
