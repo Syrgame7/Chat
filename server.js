@@ -45,13 +45,12 @@ io.on('connection', (socket) => {
     socket.join(room);
     users[room][socket.id] = name;
 
-    // إرسال قائمة المستخدمين مع socket.id
-    const userList = Object.entries(users[room]).map(([id, n]) => ({ id, name: n }));
+    // إرسال قائمة المستخدمين
+    const userList = Object.values(users[room] || {});
     io.to(room).emit('onlineUsers', { 
       room, 
-      users: userList.map(u => u.name), 
-      count: userList.length,
-      usersWithId: userList
+      users: userList, 
+      count: userList.length
     });
 
     socket.emit('loadMessages', { room, messages: messages[room] || [] });
@@ -131,27 +130,6 @@ io.on('connection', (socket) => {
     socket.emit('allPosts', posts);
   });
 
-  // --- مكالمات WebRTC ---
-  socket.on('callUser', (data) => {
-    socket.to(data.toSocketId).emit('incomingCall', { 
-      from: data.fromName, 
-      fromSocketId: data.fromSocketId,
-      offer: data.offer 
-    });
-  });
-
-  socket.on('acceptCall', (data) => {
-    socket.to(data.toSocketId).emit('callAccepted', { answer: data.answer });
-  });
-
-  socket.on('iceCandidate', (data) => {
-    socket.to(data.toSocketId).emit('iceCandidate', data.candidate);
-  });
-
-  socket.on('callEnded', (data) => {
-    socket.to(data.toSocketId).emit('callEnded');
-  });
-
   socket.on('disconnect', () => {
     if (currentRoom && users[currentRoom]) {
       delete users[currentRoom][socket.id];
@@ -160,12 +138,11 @@ io.on('connection', (socket) => {
   });
 
   function updateOnlineUsers(room) {
-    const userList = Object.entries(users[room] || {}).map(([id, n]) => ({ id, name: n }));
+    const userList = Object.values(users[room] || {});
     io.to(room).emit('onlineUsers', { 
       room, 
-      users: userList.map(u => u.name), 
-      count: userList.length,
-      usersWithId: userList
+      users: userList, 
+      count: userList.length
     });
   }
 });
