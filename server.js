@@ -7,52 +7,62 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: "*", // في الإنتاج: غيّر إلى نطاقك فقط
+    origin: "*",
     methods: ["GET", "POST"]
   }
 });
 
+// ✅ تخزين مؤقت للرسائل والصور والحالات في الذاكرة
+const messages = {
+  family: [],
+  public: [],
+  status: []
+};
+
 // خدمة الملفات الثابتة
 app.use(express.static(path.join(__dirname, 'public')));
 
-// جذور التطبيق
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// تخزين غرف الدردشة (بسيط — بدون قاعدة بيانات)
-const rooms = {
-  family: [],
-  public: [],
-  status: [] // الحالات يمكن معالجتها لاحقًا
-};
-
 io.on('connection', (socket) => {
-  console.log('مستخدم متصل:', socket.id);
+  console.log('اتصال جديد:', socket.id);
 
-  // الانضمام إلى غرفة
+  // الانضمام إلى غرفة وطلب تحميل الرسائل
   socket.on('joinRoom', (room) => {
     socket.join(room);
-    console.log(`انضم ${socket.id} إلى غرفة: ${room}`);
+    socket.emit('loadMessages', { room, messages: messages[room] || [] });
   });
 
-  // إرسال رسالة
+  // تحميل جميع الحالات
+  socket.on('loadStatuses', () => {
+    socket.emit('allStatuses', messages.status);
+  });
+
+  // إرسال رسالة نصية
   socket.on('sendMessage', (data) => {
+    const msg = { ...data, type: 'text', time: Date.now() };
+    messages[data.room].push(msg);
     io.to(data.room).emit('receiveMessage', data);
   });
 
-  // إرسال صورة (كـ data URL)
+  // إرسال صورة
   socket.on('sendImage', (data) => {
+    const msg = { ...data, type: 'image', time: Date.now() };
+    messages[data.room].push(msg);
     io.to(data.room).emit('receiveImage', data);
   });
 
-  // إرسال حالة
+  // نشر حالة
   socket.on('postStatus', (data) => {
-    io.emit('newStatus', data); // للجميع
+    const status = { ...data, type: 'status', time: Date.now() };
+    messages.status.push(status);
+    io.emit('newStatus', data);
   });
 
   socket.on('disconnect', () => {
-    console.log('مستخدم غير متصل:', socket.id);
+    console.log('انفصال:', socket.id);
   });
 });
 
