@@ -2,74 +2,61 @@ const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const path = require('path');
-const cloudinary = require('cloudinary').v2;
-const fs = require('fs');
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
-  cors: { origin: "*", methods: ["GET", "POST"] }
-});
-
-// تهيئة Cloudinary من المتغيرات البيئية
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-});
-
-// نقطة نهاية لرفع الصوت (يجب أن تكون قبل express.static)
-app.post('/upload-audio', express.raw({ type: 'application/octet-stream', limit: '10mb' }), (req, res) => {
-  const filename = `audio_${Date.now()}.webm`;
-  const filepath = path.join(__dirname, filename);
-
-  // حفظ الملف مؤقتًا
-  fs.writeFileSync(filepath, req.body);
-
-  // رفع إلى Cloudinary
-  cloudinary.uploader.upload(filepath, { resource_type: 'auto' }, (error, result) => {
-    // حذف الملف المؤقت
-    if (fs.existsSync(filepath)) {
-      fs.unlinkSync(filepath);
-    }
-
-    if (error) {
-      console.error('خطأ في رفع Cloudinary:', error.message);
-      return res.status(500).json({ success: false, error: 'فشل رفع الصوت إلى Cloudinary' });
-    }
-
-    // إرجاع الرابط المباشر
-    res.json({ success: true, url: result.secure_url });
-  });
+  cors: {
+    origin: "*", // في الإنتاج: غيّر إلى نطاقك فقط
+    methods: ["GET", "POST"]
+  }
 });
 
 // خدمة الملفات الثابتة
 app.use(express.static(path.join(__dirname, 'public')));
 
-// معالجة المسارات غير الموجودة
-app.use((req, res) => {
-  res.status(404).json({ error: 'المسار غير موجود' });
+// جذور التطبيق
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-let messages = [];
+// تخزين غرف الدردشة (بسيط — بدون قاعدة بيانات)
+const rooms = {
+  family: [],
+  public: [],
+  status: [] // الحالات يمكن معالجتها لاحقًا
+};
 
-io.on('connection', function(socket) {
-  socket.emit('prev', messages);
-  socket.on('send', function(data) {
-    const msg = {
-      id: socket.id,
-      u: data.u,
-      t: data.t,
-      time: new Date().toLocaleTimeString('ar-EG'),
-      isAudio: data.isAudio || false
-    };
-    messages.push(msg);
-    if (messages.length > 100) messages.shift();
-    io.emit('msg', msg);
+io.on('connection', (socket) => {
+  console.log('مستخدم متصل:', socket.id);
+
+  // الانضمام إلى غرفة
+  socket.on('joinRoom', (room) => {
+    socket.join(room);
+    console.log(`انضم ${socket.id} إلى غرفة: ${room}`);
+  });
+
+  // إرسال رسالة
+  socket.on('sendMessage', (data) => {
+    io.to(data.room).emit('receiveMessage', data);
+  });
+
+  // إرسال صورة (كـ data URL)
+  socket.on('sendImage', (data) => {
+    io.to(data.room).emit('receiveImage', data);
+  });
+
+  // إرسال حالة
+  socket.on('postStatus', (data) => {
+    io.emit('newStatus', data); // للجميع
+  });
+
+  socket.on('disconnect', () => {
+    console.log('مستخدم غير متصل:', socket.id);
   });
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, '0.0.0.0', function() {
-  console.log('✅ الخادم شغال على المنفذ ' + PORT);
+server.listen(PORT, () => {
+  console.log(`الخادم يعمل على المنفذ ${PORT}`);
 });
