@@ -13,31 +13,25 @@ const io = socketIo(server, {
 });
 
 // --- تخزين البيانات ---
-// الرسائل في الغرف
 const messages = {
   family: [],
   public: [],
   status: []
 };
 
-// تتبع المستخدمين المتصلين
 const users = {
   family: {},
   public: {}
 };
 
-// المنشورات (Posts)
 const posts = [];
 
-// --- خدمة الملفات الثابتة ---
 app.use(express.static(path.join(__dirname, 'public')));
 
-// --- الصفحة الرئيسية ---
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// --- اتصال العميل ---
 io.on('connection', (socket) => {
   let currentRoom = null;
   let userName = null;
@@ -48,69 +42,68 @@ io.on('connection', (socket) => {
     userName = name;
     currentRoom = room;
 
-    // الانضمام للغرفة
     socket.join(room);
     users[room][socket.id] = name;
 
-    // إرسال البيانات السابقة
+    // إرسال قائمة المستخدمين مع socket.id
+    const userList = Object.entries(users[room]).map(([id, n]) => ({ id, name: n }));
+    io.to(room).emit('onlineUsers', { 
+      room, 
+      users: userList.map(u => u.name), 
+      count: userList.length,
+      usersWithId: userList
+    });
+
     socket.emit('loadMessages', { room, messages: messages[room] || [] });
     socket.emit('loadStatuses', messages.status);
     socket.emit('allPosts', posts);
 
-    // تحديث قائمة المتصلين
     updateOnlineUsers(room);
   });
 
-  // --- تحميل الحالات ---
   socket.on('loadStatuses', () => {
     socket.emit('allStatuses', messages.status);
   });
 
-  // --- إرسال رسالة نصية ---
   socket.on('sendMessage', (data) => {
     const msg = { ...data, type: 'text', time: Date.now() };
     messages[data.room].push(msg);
     io.to(data.room).emit('receiveMessage', data);
   });
 
-  // --- إرسال صورة ---
   socket.on('sendImage', (data) => {
     const msg = { ...data, type: 'image', time: Date.now() };
     messages[data.room].push(msg);
     io.to(data.room).emit('receiveImage', data);
   });
 
-  // --- إرسال رسالة صوتية ---
   socket.on('sendAudio', (data) => {
     const msg = { ...data, type: 'audio', time: Date.now() };
     messages[data.room].push(msg);
     io.to(data.room).emit('receiveAudio', data);
   });
 
-  // --- نشر حالة ---
   socket.on('postStatus', (data) => {
     const status = { ...data, type: 'status', time: Date.now() };
     messages.status.push(status);
     io.emit('newStatus', data);
   });
 
-  // --- نشر منشور جديد ---
   socket.on('publishPost', (data) => {
     const post = {
-      id: Date.now(), // معرف فريد
+      id: Date.now(),
       name: data.name,
       text: data.text || '',
       image: data.image || null,
       time: Date.now(),
       likes: 0,
       comments: [],
-      likedBy: [] // لمنع تكرار الإعجاب من نفس المستخدم
+      likedBy: []
     };
     posts.push(post);
-    io.emit('newPost', post); // إرسال للجميع
+    io.emit('newPost', post);
   });
 
-  // --- الإعجاب بمنشور ---
   socket.on('likePost', (postId) => {
     const post = posts.find(p => p.id === postId);
     if (post && !post.likedBy.includes(socket.id)) {
@@ -120,7 +113,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // --- إضافة تعليق على منشور ---
   socket.on('addComment', (data) => {
     const post = posts.find(p => p.id === data.postId);
     if (post) {
@@ -135,12 +127,31 @@ io.on('connection', (socket) => {
     }
   });
 
-  // --- تحميل جميع المنشورات ---
   socket.on('loadPosts', () => {
     socket.emit('allPosts', posts);
   });
 
-  // --- عند انفصال المستخدم ---
+  // --- مكالمات WebRTC ---
+  socket.on('callUser', (data) => {
+    socket.to(data.toSocketId).emit('incomingCall', { 
+      from: data.fromName, 
+      fromSocketId: data.fromSocketId,
+      offer: data.offer 
+    });
+  });
+
+  socket.on('acceptCall', (data) => {
+    socket.to(data.toSocketId).emit('callAccepted', { answer: data.answer });
+  });
+
+  socket.on('iceCandidate', (data) => {
+    socket.to(data.toSocketId).emit('iceCandidate', data.candidate);
+  });
+
+  socket.on('callEnded', (data) => {
+    socket.to(data.toSocketId).emit('callEnded');
+  });
+
   socket.on('disconnect', () => {
     if (currentRoom && users[currentRoom]) {
       delete users[currentRoom][socket.id];
@@ -148,19 +159,18 @@ io.on('connection', (socket) => {
     }
   });
 
-  // --- دالة تحديث المتصلين ---
   function updateOnlineUsers(room) {
-    const userList = Object.values(users[room] || {});
-    io.to(room).emit('onlineUsers', {
-      room,
-      users: userList,
-      count: userList.length
+    const userList = Object.entries(users[room] || {}).map(([id, n]) => ({ id, name: n }));
+    io.to(room).emit('onlineUsers', { 
+      room, 
+      users: userList.map(u => u.name), 
+      count: userList.length,
+      usersWithId: userList
     });
   }
 });
 
-// --- تشغيل الخادم ---
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`✅ الخادم يعمل على: http://localhost:${PORT}`);
+  console.log(`✅ الخادم يعمل على المنفذ ${PORT}`);
 });
