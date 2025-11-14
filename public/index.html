@@ -81,6 +81,7 @@
       100% { opacity: 0.3; }
     }
 
+    /* فقاعات زرقاء غامقة فقط */
     .msg {
       max-width: 75%;
       padding: 10px;
@@ -88,9 +89,11 @@
       word-wrap: break-word;
       box-shadow: 0 2px 5px rgba(0,0,0,0.2);
       transition: background-color 0.5s ease;
+      background: #0d3b66 !important;
+      color: white !important;
     }
-    .in { background: var(--msg-in-bg, #2c2c3e); align-self: flex-start; border-bottom-left-radius: 6px; }
-    .out { background: var(--msg-out-bg, #1e3a5f); align-self: flex-end; border-bottom-right-radius: 6px; }
+    .in { align-self: flex-start; border-bottom-left-radius: 6px; }
+    .out { align-self: flex-end; border-bottom-right-radius: 6px; }
     
     .msg-content {
       display: flex;
@@ -114,6 +117,16 @@
       border-radius: 8px;
       margin-top: 5px;
       display: block;
+    }
+
+    /* قلب متحرك */
+    .heart {
+      font-size: 24px;
+      animation: float 2s infinite ease-in-out;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
     }
 
     .input-area {
@@ -147,7 +160,7 @@
       cursor: pointer;
       transition: background 0.2s;
     }
-    .attach-btn, .emoji-btn, .voice-btn {
+    .attach-btn, .emoji-btn, .voice-btn, .heart-btn {
       background: #5c677d;
       width: 36px;
       height: 36px;
@@ -160,6 +173,9 @@
       justify-content: center;
       color: white;
       transition: background 0.2s;
+    }
+    .heart-btn {
+      background: #e74c3c;
     }
     .voice-btn.recording {
       background: #d32f2f;
@@ -427,6 +443,15 @@
       font-size: 12px;
       cursor: pointer;
     }
+
+    /* جاري الكتابة */
+    .typing-indicator {
+      font-size: 12px;
+      color: #aaa;
+      margin-top: 4px;
+      direction: rtl;
+      padding: 0 12px;
+    }
   </style>
 </head>
 <body>
@@ -473,8 +498,11 @@
     <button class="attach-btn" onclick="document.getElementById('imageUpload').click()">📎</button>
     <button class="emoji-btn" onclick="toggleEmojiPanel()">😊</button>
     <button class="voice-btn" onclick="recordAudio()">🎤</button>
+    <button class="heart-btn" onclick="sendHeart()">❤️</button>
     <button onclick="sendText()">إرسال</button>
   </div>
+
+  <div id="typingIndicator" class="typing-indicator" style="display:none;"></div>
 
   <div id="progressContainer">
     <div id="progressBar"></div>
@@ -501,7 +529,6 @@
     // --- نظام الأصوات ---
     let soundsAllowed = false;
 
-    // تفعيل الأصوات عند أول تفاعل
     function enableSounds() {
       if (!soundsAllowed) {
         soundsAllowed = true;
@@ -509,7 +536,6 @@
       }
     }
 
-    // أصوات مخصصة
     function playSendSound() {
       if (soundsAllowed) {
         new Audio('/sounds/send.mp3').play().catch(e => console.log('فشل صوت الإرسال'));
@@ -534,9 +560,48 @@
       }
     }
 
-    // تفعيل الأصوات عند أول نقر
     document.body.addEventListener('click', enableSounds, { once: true });
     document.body.addEventListener('touchstart', enableSounds, { once: true });
+
+    // --- جاري الكتابة ---
+    let typingTimer = null;
+
+    document.getElementById('msg').addEventListener('input', () => {
+      const text = document.getElementById('msg').value.trim();
+      if (text) {
+        socket.emit('typing', { room: currentRoom, name: myName });
+      }
+      
+      if (typingTimer) clearTimeout(typingTimer);
+      typingTimer = setTimeout(() => {
+        socket.emit('stopTyping', { room: currentRoom });
+      }, 3000);
+    });
+
+    const usersTyping = new Set();
+
+    socket.on('userTyping', (data) => {
+      if (data.room === currentRoom && data.name !== myName) {
+        usersTyping.add(data.name);
+        updateTypingIndicator();
+      }
+    });
+
+    socket.on('userStoppedTyping', (data) => {
+      usersTyping.delete(data.name);
+      updateTypingIndicator();
+    });
+
+    function updateTypingIndicator() {
+      const indicator = document.getElementById('typingIndicator');
+      if (usersTyping.size > 0) {
+        const names = Array.from(usersTyping).join(', ');
+        indicator.textContent = `${names} يكتب...`;
+        indicator.style.display = 'block';
+      } else {
+        indicator.style.display = 'none';
+      }
+    }
 
     // --- الإشعارات الداخلية ---
     const unreadCounts = { family: 0, public: 0 };
@@ -566,12 +631,18 @@
       const div = document.createElement('div');
       div.className = isSelf ? 'msg out' : 'msg in';
 
-      let processedText = text || '';
-      if (text) {
-        const urlRegex = /(https?:\/\/[^\s]+)/g;
-        processedText = text.replace(urlRegex, url => 
-          `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color:#25D366;text-decoration:underline;">${url}</a>`
-        );
+      let contentHtml = '';
+      if (text === '❤️') {
+        contentHtml = `<div class="heart">❤️</div>`;
+      } else {
+        let processedText = text || '';
+        if (text && text !== '❤️') {
+          const urlRegex = /(https?:\/\/[^\s]+)/g;
+          processedText = text.replace(urlRegex, url => 
+            `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color:#64b5f6;text-decoration:underline;">${url}</a>`
+          );
+        }
+        contentHtml = `<b>${name}:</b> ${processedText}`;
       }
 
       let mediaHtml = '';
@@ -586,8 +657,7 @@
       div.innerHTML = `
         <div class="msg-content">
           <div class="msg-text">
-            <b>${name}:</b>
-            ${processedText}
+            ${contentHtml}
             ${mediaHtml}
             ${statusText ? `<div class="delivery-status">${statusText}</div>` : ''}
           </div>
@@ -597,7 +667,7 @@
       chat.appendChild(div);
       chat.scrollTop = chat.scrollHeight;
 
-      if (!isSelf) {
+      if (!isSelf && text !== '❤️') {
         playReceiveSound();
       }
     }
@@ -679,6 +749,12 @@
         return;
       }
 
+      // تحقق من الاتصال
+      if (!socket.connected) {
+        alert('غير متصل بالخادم!');
+        return;
+      }
+
       const reader = file ? new FileReader() : null;
       if (reader) {
         reader.onload = (ev) => {
@@ -757,7 +833,7 @@
       if (data.room === currentRoom) loadMessages(data.room, data.messages);
     });
 
-    socket.on('loadStatuses', (statuses) => loadStatuses(statuses));
+    socket.on('loadStatuses', (statuses) => loadStatuses(statuses);
 
     socket.on('onlineUsers', (data) => {
       if (data.room === currentRoom) {
@@ -849,6 +925,11 @@
       document.getElementById('statusText').value = '';
     }
 
+    function sendHeart() {
+      socket.emit('sendMessage', { room: currentRoom, name: myName, text: '❤️' });
+      playSendSound();
+    }
+
     socket.on('receiveMessage', (data) => {
       const isSelf = data.name === myName;
       if (data.room === currentRoom) {
@@ -884,28 +965,25 @@
       feed.prepend(div);
     });
 
-    const bubbleColors = [
-      { in: '#2c2c3e', out: '#1e3a5f' },
-      { in: '#2d3748', out: '#2b6cb0' },
-      { in: '#2f2f47', out: '#4c51bf' },
-      { in: '#2c3a47', out: '#38ada9' },
-      { in: '#2f3542', out: '#ff6b81' },
-      { in: '#2c2e3e', out: '#55efc4' },
-      { in: '#2d3436', out: '#fdcb6e' },
-      { in: '#2f3640', out: '#a29bfe' }
-    ];
+    socket.on('allPosts', (allPosts) => {
+      posts = allPosts;
+      renderPosts();
+    });
 
-    let colorIndex = 0;
-    setInterval(() => {
-      const colors = bubbleColors[colorIndex % bubbleColors.length];
-      colorIndex++;
-      document.documentElement.style.setProperty('--msg-in-bg', colors.in);
-      document.documentElement.style.setProperty('--msg-out-bg', colors.out);
-      
-      document.querySelectorAll('.msg.in').forEach(el => el.style.backgroundColor = colors.in);
-      document.querySelectorAll('.msg.out').forEach(el => el.style.backgroundColor = colors.out);
-    }, 15000);
+    socket.on('newPost', (post) => {
+      posts.push(post);
+      renderPosts();
+    });
 
+    socket.on('updatePost', (updatedPost) => {
+      const index = posts.findIndex(p => p.id === updatedPost.id);
+      if (index !== -1) {
+        posts[index] = updatedPost;
+        renderPosts();
+      }
+    });
+
+    // --- لوحة الإيموجي ---
     function toggleEmojiPanel() {
       const panel = document.getElementById('emojiPanel');
       if (panel.style.display === 'flex') {
@@ -935,6 +1013,7 @@
       }
     });
 
+    // --- النجوم المتحركة ---
     function createStars(containerId) {
       const starsContainer = document.getElementById(containerId);
       starsContainer.innerHTML = '';
