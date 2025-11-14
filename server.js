@@ -12,18 +12,8 @@ const io = socketIo(server, {
   }
 });
 
-// --- تخزين البيانات ---
-const messages = {
-  family: [],
-  public: [],
-  status: []
-};
-
-const users = {
-  family: {},
-  public: {}
-};
-
+// --- البيانات ---
+const messages = { family: [], public: [] };
 const posts = [];
 
 app.use(express.static(path.join(__dirname, 'public')));
@@ -33,76 +23,29 @@ app.get('/', (req, res) => {
 });
 
 io.on('connection', (socket) => {
-  let currentRoom = null;
-  let userName = 'زائر';
+  console.log('اتصال جديد');
 
-  // --- الانضمام إلى غرفة ---
   socket.on('joinRoom', (data) => {
-    const { room, name } = data;
-    userName = name || 'زائر';
-    currentRoom = room;
-
-    socket.join(room);
-    users[room][socket.id] = userName;
-
-    // إرسال قائمة المستخدمين
-    const userList = Object.values(users[room] || {});
-    io.to(room).emit('onlineUsers', { 
-      room, 
-      users: userList, 
-      count: userList.length
-    });
-
-    socket.emit('loadMessages', { room, messages: messages[room] || [] });
-    socket.emit('loadStatuses', messages.status);
+    socket.join(data.room);
+    const count = io.sockets.adapter.rooms.get(data.room)?.size || 0;
+    io.to(data.room).emit('onlineUsers', { room: data.room, count });
+    socket.emit('loadMessages', { room: data.room, messages: messages[data.room] || [] });
     socket.emit('allPosts', posts);
-
-    console.log(`اتصال جديد: ${userName} في ${room}`);
-  });
-
-  socket.on('loadStatuses', () => {
-    socket.emit('allStatuses', messages.status);
   });
 
   socket.on('sendMessage', (data) => {
-    if (!data || !data.room || !data.name) return;
-    const msg = { ...data, type: 'text', time: Date.now() };
-    messages[data.room].push(msg);
+    messages[data.room].push(data);
     io.to(data.room).emit('receiveMessage', data);
   });
 
-  socket.on('sendImage', (data) => {
-    if (!data || !data.room || !data.name) return;
-    const msg = { ...data, type: 'image', time: Date.now() };
-    messages[data.room].push(msg);
-    io.to(data.room).emit('receiveImage', data);
-  });
-
-  socket.on('sendAudio', (data) => {
-    if (!data || !data.room || !data.name) return;
-    const msg = { ...data, type: 'audio', time: Date.now() };
-    messages[data.room].push(msg);
-    io.to(data.room).emit('receiveAudio', data);
-  });
-
-  socket.on('postStatus', (data) => {
-    if (!data || !data.name) return;
-    const status = { ...data, type: 'status', time: Date.now() };
-    messages.status.push(status);
-    io.emit('newStatus', data);
-  });
-
   socket.on('publishPost', (data) => {
-    if (!data || !data.name) return;
     const post = {
       id: Date.now(),
       name: data.name,
       text: data.text || '',
       image: data.image || null,
-      time: Date.now(),
       likes: 0,
-      comments: [],
-      likedBy: []
+      comments: []
     };
     posts.push(post);
     io.emit('newPost', post);
@@ -110,9 +53,8 @@ io.on('connection', (socket) => {
 
   socket.on('likePost', (postId) => {
     const post = posts.find(p => p.id === postId);
-    if (post && !post.likedBy.includes(socket.id)) {
+    if (post) {
       post.likes++;
-      post.likedBy.push(socket.id);
       io.emit('updatePost', post);
     }
   });
@@ -120,55 +62,20 @@ io.on('connection', (socket) => {
   socket.on('addComment', (data) => {
     const post = posts.find(p => p.id === data.postId);
     if (post) {
-      const comment = {
-        id: Date.now(),
+      post.comments.push({
         name: data.name,
-        text: data.text,
-        time: Date.now()
-      };
-      post.comments.push(comment);
+        text: data.text
+      });
       io.emit('updatePost', post);
     }
   });
 
-  socket.on('loadPosts', () => {
-    socket.emit('allPosts', posts);
-  });
-
-  // --- جاري الكتابة (آمن) ---
-  socket.on('typing', (data) => {
-    if (data && data.room && data.name) {
-      socket.to(data.room).emit('userTyping', { 
-        name: data.name, 
-        room: data.room 
-      });
-    }
-  });
-
-  socket.on('stopTyping', (data) => {
-    if (data && data.room) {
-      socket.to(data.room).emit('userStoppedTyping', { 
-        name: userName, 
-        room: data.room 
-      });
-    }
-  });
-
   socket.on('disconnect', () => {
-    if (currentRoom && users[currentRoom]) {
-      delete users[currentRoom][socket.id];
-      const userList = Object.values(users[currentRoom] || {});
-      io.to(currentRoom).emit('onlineUsers', { 
-        room: currentRoom, 
-        users: userList, 
-        count: userList.length
-      });
-    }
-    console.log(`انفصال: ${userName}`);
+    console.log('انفصال');
   });
 });
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`✅ الخادم يعمل على المنفذ ${PORT}`);
+  console.log(`الخادم يعمل على المنفذ ${PORT}`);
 });
