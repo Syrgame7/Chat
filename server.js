@@ -6,13 +6,9 @@ const path = require('path');
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
+  cors: { origin: "*", methods: ["GET", "POST"] }
 });
 
-// --- البيانات ---
 const messages = { family: [], public: [] };
 const posts = [];
 
@@ -23,13 +19,17 @@ app.get('/', (req, res) => {
 });
 
 io.on('connection', (socket) => {
-  console.log('اتصال جديد');
+  let currentRoom = null;
+  let userName = 'زائر';
 
   socket.on('joinRoom', (data) => {
-    socket.join(data.room);
-    const count = io.sockets.adapter.rooms.get(data.room)?.size || 0;
-    io.to(data.room).emit('onlineUsers', { room: data.room, count });
-    socket.emit('loadMessages', { room: data.room, messages: messages[data.room] || [] });
+    userName = data.name || 'زائر';
+    currentRoom = data.room;
+    socket.join(currentRoom);
+    
+    const count = io.sockets.adapter.rooms.get(currentRoom)?.size || 0;
+    io.to(currentRoom).emit('onlineUsers', { room: currentRoom, count });
+    socket.emit('loadMessages', { room: currentRoom, messages: messages[currentRoom] || [] });
     socket.emit('allPosts', posts);
   });
 
@@ -38,15 +38,13 @@ io.on('connection', (socket) => {
     io.to(data.room).emit('receiveMessage', data);
   });
 
+  socket.on('sendAudio', (data) => {
+    messages[data.room].push({ ...data, type: 'audio' });
+    io.to(data.room).emit('receiveAudio', data);
+  });
+
   socket.on('publishPost', (data) => {
-    const post = {
-      id: Date.now(),
-      name: data.name,
-      text: data.text || '',
-      image: data.image || null,
-      likes: 0,
-      comments: []
-    };
+    const post = { id: Date.now(), ...data, likes: 0, comments: [] };
     posts.push(post);
     io.emit('newPost', post);
   });
@@ -62,20 +60,20 @@ io.on('connection', (socket) => {
   socket.on('addComment', (data) => {
     const post = posts.find(p => p.id === data.postId);
     if (post) {
-      post.comments.push({
-        name: data.name,
-        text: data.text
-      });
+      post.comments.push({ name: data.name, text: data.text });
       io.emit('updatePost', post);
     }
   });
 
   socket.on('disconnect', () => {
-    console.log('انفصال');
+    if (currentRoom) {
+      const count = io.sockets.adapter.rooms.get(currentRoom)?.size || 0;
+      io.to(currentRoom).emit('onlineUsers', { room: currentRoom, count });
+    }
   });
 });
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`الخادم يعمل على المنفذ ${PORT}`);
+  console.log(`الخادم يعمل على ${PORT}`);
 });
