@@ -13,9 +13,9 @@
       height: 100vh;
       display: flex;
       flex-direction: column;
-      /* للتوافق مع شريط الحالة في Android */
       padding-top: env(safe-area-inset-top, 20px);
       padding-bottom: env(safe-area-inset-bottom, 0);
+      overflow-y: auto;
     }
     .header {
       background: #075e54;
@@ -24,13 +24,14 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      /* ضمان ظهوره تحت شريط الحالة */
       position: relative;
       z-index: 10;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
     .tabs {
       display: flex;
       background: #075e54;
+      width: 100%;
     }
     .tab {
       flex: 1;
@@ -260,7 +261,6 @@
     async function recordAudio() {
       const voiceBtn = document.getElementById('voiceBtn');
       try {
-        // طلب إذن الميكروفون
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         voiceBtn.classList.add('recording');
         voiceBtn.innerHTML = '🎙️';
@@ -288,14 +288,12 @@
         };
 
         mediaRecorder.start();
-        // التسجيل لمدة 8 ثوانٍ
         setTimeout(() => { mediaRecorder.stop(); }, 8000);
 
       } catch (err) {
         voiceBtn.classList.remove('recording');
         voiceBtn.innerHTML = '🎤';
         alert('فشل التسجيل: ' + (err.message || 'الإذن مرفوض'));
-        console.error('خطأ في التسجيل:', err);
       }
     }
 
@@ -421,4 +419,4 @@
     }
   </script>
 </body>
-</html>
+  </html>
