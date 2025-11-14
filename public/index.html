@@ -2,33 +2,167 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover"/>
   <title>دردشتي</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Tahoma; background: #000; color: white; height: 100vh; display: flex; flex-direction: column; }
-    .header { background: #075e54; padding: 8px 10px; font-size: 16px; display: flex; justify-content: space-between; align-items: center; }
-    .tabs { display: flex; background: #075e54; }
-    .tab { flex: 1; padding: 10px 0; text-align: center; font-size: 14px; cursor: pointer; color: #ddd; }
-    .tab.active { color: white; border-bottom: 2px solid #25D366; }
-    .section { position: relative; flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
-    .stars { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -1; }
-    .star { position: absolute; background: white; border-radius: 50%; animation: twinkle 3s infinite; }
-    @keyframes twinkle { 0%,100% { opacity: 0.2; } 50% { opacity: 1; } }
-    .msg { max-width: 75%; padding: 10px; border-radius: 15px; background: #0d3b66; font-size: 14px; }
+    body {
+      font-family: 'Segoe UI', Tahoma;
+      background: #000;
+      color: white;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      /* للتوافق مع شريط الحالة في Android */
+      padding-top: env(safe-area-inset-top, 20px);
+      padding-bottom: env(safe-area-inset-bottom, 0);
+    }
+    .header {
+      background: #075e54;
+      padding: 12px 16px;
+      font-size: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      /* ضمان ظهوره تحت شريط الحالة */
+      position: relative;
+      z-index: 10;
+    }
+    .tabs {
+      display: flex;
+      background: #075e54;
+    }
+    .tab {
+      flex: 1;
+      padding: 14px 0;
+      text-align: center;
+      font-size: 16px;
+      cursor: pointer;
+      color: #ddd;
+    }
+    .tab.active {
+      color: white;
+      border-bottom: 3px solid #25D366;
+    }
+    .section {
+      position: relative;
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .stars {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: -1;
+    }
+    .star {
+      position: absolute;
+      background: white;
+      border-radius: 50%;
+      animation: twinkle 3s infinite;
+    }
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.2; }
+      50% { opacity: 1; }
+    }
+    .msg {
+      max-width: 75%;
+      padding: 12px;
+      border-radius: 16px;
+      background: #0d3b66;
+      font-size: 15px;
+    }
     .in { align-self: flex-start; }
     .out { align-self: flex-end; }
-    .input-area { display: flex; padding: 8px; background: rgba(255,255,255,0.08); gap: 6px; align-items: center; flex-wrap: wrap; }
-    .input-area input { flex: 1; padding: 8px 12px; border: none; background: rgba(0,0,0,0.3); border-radius: 20px; font-size: 14px; color: white; min-width: 150px; }
-    .input-area button { padding: 8px 16px; background: #075e54; color: white; border: none; border-radius: 18px; font-size: 14px; cursor: pointer; }
-    .action-btn { width: 36px; height: 36px; border-radius: 50%; background: #5c677d; color: white; border: none; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-    .online-indicator { font-size: 13px; background: #25D366; padding: 3px 8px; border-radius: 12px; }
-    .post { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; margin-bottom: 12px; }
-    .post-form { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; margin: 12px 0; }
-    .post-form textarea { width: 100%; padding: 8px; border: none; background: rgba(0,0,0,0.3); border-radius: 8px; color: white; resize: none; height: 60px; font-size: 14px; }
-    .post-actions { margin-top: 8px; display: flex; gap: 12px; font-size: 13px; color: #a0aec0; cursor: pointer; }
-    .voice-btn.recording { background: #d32f2f; animation: pulse 1.5s infinite; }
-    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(211,47,47,0.5); } 70% { box-shadow: 0 0 0 8px rgba(211,47,47,0); } 100% { box-shadow: 0 0 0 0 rgba(211,47,47,0); } }
+    .input-area {
+      display: flex;
+      padding: 12px;
+      background: rgba(255,255,255,0.08);
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .input-area input {
+      flex: 1;
+      padding: 12px 16px;
+      border: none;
+      background: rgba(0,0,0,0.3);
+      border-radius: 24px;
+      font-size: 16px;
+      color: white;
+      min-width: 180px;
+    }
+    .input-area button {
+      padding: 10px 20px;
+      background: #075e54;
+      color: white;
+      border: none;
+      border-radius: 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .voice-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: #5c677d;
+      color: white;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    .voice-btn.recording {
+      background: #d32f2f;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(211,47,47,0.5); }
+      70% { box-shadow: 0 0 0 10px rgba(211,47,47,0); }
+      100% { box-shadow: 0 0 0 0 rgba(211,47,47,0); }
+    }
+    .online-indicator {
+      font-size: 14px;
+      background: #25D366;
+      padding: 6px 12px;
+      border-radius: 20px;
+    }
+    .post,
+    .post-form {
+      background: rgba(255,255,255,0.05);
+      padding: 16px;
+      border-radius: 16px;
+      margin: 16px 0;
+    }
+    .post-form textarea {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      background: rgba(0,0,0,0.3);
+      border-radius: 12px;
+      color: white;
+      resize: none;
+      height: 80px;
+      font-size: 16px;
+    }
+    .post-actions {
+      margin-top: 12px;
+      display: flex;
+      gap: 16px;
+      font-size: 14px;
+      color: #a0aec0;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -60,8 +194,7 @@
 
   <div class="input-area" id="main-input">
     <input type="text" id="msg" placeholder="اكتب رسالة..." />
-    <button class="action-btn" onclick="document.getElementById('audioUpload').click()">🎤</button>
-    <input type="file" id="audioUpload" accept="audio/*" style="display:none;" />
+    <button class="voice-btn" id="voiceBtn" onclick="recordAudio()">🎤</button>
     <button onclick="sendText()">إرسال</button>
   </div>
 
@@ -123,18 +256,48 @@
       document.getElementById('msg').value = '';
     }
 
-    // --- تسجيل الصوت ---
-    document.getElementById('audioUpload').addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        socket.emit('sendAudio', { room: currentRoom, name: myName, audio: ev.target.result });
-        playSound('send');
-      };
-      reader.readAsDataURL(file);
-    });
+    // --- تسجيل الصوت (مباشر بدون فتح ملفات) ---
+    async function recordAudio() {
+      const voiceBtn = document.getElementById('voiceBtn');
+      try {
+        // طلب إذن الميكروفون
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        voiceBtn.classList.add('recording');
+        voiceBtn.innerHTML = '🎙️';
+        playSound('record');
+
+        const mediaRecorder = new MediaRecorder(stream);
+        const chunks = [];
+
+        mediaRecorder.ondataavailable = (e) => {
+          chunks.push(e.data);
+        };
+
+        mediaRecorder.onstop = async () => {
+          voiceBtn.classList.remove('recording');
+          voiceBtn.innerHTML = '🎤';
+          stream.getTracks().forEach(track => track.stop());
+
+          const blob = new Blob(chunks, { type: 'audio/ogg; codecs=opus' });
+          const reader = new FileReader();
+          reader.onload = () => {
+            socket.emit('sendAudio', { room: currentRoom, name: myName, audio: reader.result });
+            playSound('send');
+          };
+          reader.readAsDataURL(blob);
+        };
+
+        mediaRecorder.start();
+        // التسجيل لمدة 8 ثوانٍ
+        setTimeout(() => { mediaRecorder.stop(); }, 8000);
+
+      } catch (err) {
+        voiceBtn.classList.remove('recording');
+        voiceBtn.innerHTML = '🎤';
+        alert('فشل التسجيل: ' + (err.message || 'الإذن مرفوض'));
+        console.error('خطأ في التسجيل:', err);
+      }
+    }
 
     // --- المنشورات ---
     let posts = [];
