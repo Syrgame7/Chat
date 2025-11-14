@@ -130,6 +130,15 @@ io.on('connection', (socket) => {
     socket.emit('allPosts', posts);
   });
 
+  // --- جاري الكتابة ---
+  socket.on('typing', (data) => {
+    socket.to(data.room).emit('userTyping', { name: data.name, room: data.room });
+  });
+
+  socket.on('stopTyping', (data) => {
+    socket.to(data.room).emit('userStoppedTyping', { name: userName, room: data.room });
+  });
+
   socket.on('disconnect', () => {
     if (currentRoom && users[currentRoom]) {
       delete users[currentRoom][socket.id];
