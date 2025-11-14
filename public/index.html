@@ -523,8 +523,13 @@
   <script>
     const socket = io();
     let currentRoom = 'family';
-    let myName = localStorage.name || prompt('ما اسمك؟') || 'زائر';
-    localStorage.name = myName;
+    
+    // --- اسم المستخدم الآمن ---
+    let myName = localStorage.getItem('userName') || 'زائر';
+    if (myName === 'زائر') {
+      myName = prompt('ما اسمك؟') || 'زائر';
+      localStorage.setItem('userName', myName);
+    }
 
     // --- نظام الأصوات ---
     let soundsAllowed = false;
@@ -538,68 +543,76 @@
 
     function playSendSound() {
       if (soundsAllowed) {
-        new Audio('/sounds/send.mp3').play().catch(e => console.log('فشل صوت الإرسال'));
+        const audio = new Audio('/sounds/send.mp3');
+        audio.play().catch(e => console.log('فشل صوت الإرسال'));
       }
     }
 
     function playReceiveSound() {
       if (soundsAllowed) {
-        new Audio('/sounds/receive.mp3').play().catch(e => console.log('فشل صوت الاستلام'));
+        const audio = new Audio('/sounds/receive.mp3');
+        audio.play().catch(e => console.log('فشل صوت الاستلام'));
       }
     }
 
     function playRecordSound() {
       if (soundsAllowed) {
-        new Audio('/sounds/record.mp3').play().catch(e => console.log('فشل صوت التسجيل'));
+        const audio = new Audio('/sounds/record.mp3');
+        audio.play().catch(e => console.log('فشل صوت التسجيل'));
       }
     }
 
     function playLikeSound() {
       if (soundsAllowed) {
-        new Audio('/sounds/like.mp3').play().catch(e => console.log('فشل صوت الإعجاب'));
+        const audio = new Audio('/sounds/like.mp3');
+        audio.play().catch(e => console.log('فشل صوت الإعجاب'));
       }
     }
 
     document.body.addEventListener('click', enableSounds, { once: true });
     document.body.addEventListener('touchstart', enableSounds, { once: true });
 
-    // --- جاري الكتابة ---
+    // --- جاري الكتابة (آمن) ---
     let typingTimer = null;
-
-    document.getElementById('msg').addEventListener('input', () => {
-      const text = document.getElementById('msg').value.trim();
-      if (text) {
-        socket.emit('typing', { room: currentRoom, name: myName });
-      }
-      
-      if (typingTimer) clearTimeout(typingTimer);
-      typingTimer = setTimeout(() => {
-        socket.emit('stopTyping', { room: currentRoom });
-      }, 3000);
-    });
-
     const usersTyping = new Set();
 
-    socket.on('userTyping', (data) => {
-      if (data.room === currentRoom && data.name !== myName) {
-        usersTyping.add(data.name);
-        updateTypingIndicator();
-      }
-    });
-
-    socket.on('userStoppedTyping', (data) => {
-      usersTyping.delete(data.name);
-      updateTypingIndicator();
-    });
+    function setupTypingListener() {
+      const msgInput = document.getElementById('msg');
+      if (!msgInput) return;
+      
+      msgInput.addEventListener('input', () => {
+        try {
+          const text = msgInput.value.trim();
+          if (text && socket.connected) {
+            socket.emit('typing', { room: currentRoom, name: myName });
+          }
+          
+          if (typingTimer) clearTimeout(typingTimer);
+          typingTimer = setTimeout(() => {
+            if (socket.connected) {
+              socket.emit('stopTyping', { room: currentRoom });
+            }
+          }, 3000);
+        } catch (e) {
+          console.error('خطأ في معالجة الكتابة:', e);
+        }
+      });
+    }
 
     function updateTypingIndicator() {
-      const indicator = document.getElementById('typingIndicator');
-      if (usersTyping.size > 0) {
-        const names = Array.from(usersTyping).join(', ');
-        indicator.textContent = `${names} يكتب...`;
-        indicator.style.display = 'block';
-      } else {
-        indicator.style.display = 'none';
+      try {
+        const indicator = document.getElementById('typingIndicator');
+        if (!indicator) return;
+        
+        if (usersTyping.size > 0) {
+          const names = Array.from(usersTyping).join(', ');
+          indicator.textContent = `${names} يكتب...`;
+          indicator.style.display = 'block';
+        } else {
+          indicator.style.display = 'none';
+        }
+      } catch (e) {
+        console.error('خطأ في تحديث مؤشر الكتابة:', e);
       }
     }
 
@@ -615,19 +628,24 @@
         tab.textContent = `${baseName} (${unreadCounts[room]})`;
 
         const notif = document.getElementById('inAppNotification');
-        document.getElementById('notifName').textContent = name;
-        document.getElementById('notifText').textContent = text || 'أرسل محتوى';
-        notif.style.display = 'block';
+        if (notif) {
+          document.getElementById('notifName').textContent = name;
+          document.getElementById('notifText').textContent = text || 'أرسل محتوى';
+          notif.style.display = 'block';
 
-        setTimeout(() => {
-          notif.style.display = 'none';
-        }, 4000);
+          setTimeout(() => {
+            notif.style.display = 'none';
+          }, 4000);
+        }
       }
     }
 
     // --- عرض الرسالة ---
     function appendMessage(name, text, isSelf, image = null, audio = null) {
-      const chat = document.getElementById(currentRoom === 'family' ? 'family-chat' : 'public-chat');
+      const chatId = currentRoom === 'family' ? 'family-chat' : 'public-chat';
+      const chat = document.getElementById(chatId);
+      if (!chat) return;
+
       const div = document.createElement('div');
       div.className = isSelf ? 'msg out' : 'msg in';
 
@@ -674,7 +692,10 @@
 
     // --- تحميل الرسائل ---
     function loadMessages(room, msgs) {
-      const chat = document.getElementById(room === 'family' ? 'family-chat' : 'public-chat');
+      const chatId = room === 'family' ? 'family-chat' : 'public-chat';
+      const chat = document.getElementById(chatId);
+      if (!chat) return;
+      
       chat.innerHTML = '';
       msgs.forEach(msg => {
         if (msg.type === 'text') {
@@ -690,6 +711,8 @@
     // --- تحميل الحالات ---
     function loadStatuses(statuses) {
       const feed = document.getElementById('statusFeed');
+      if (!feed) return;
+      
       feed.innerHTML = '';
       statuses.forEach(st => {
         const div = document.createElement('div');
@@ -704,6 +727,8 @@
 
     function renderPosts() {
       const feed = document.getElementById('postsFeed');
+      if (!feed) return;
+      
       feed.innerHTML = '';
       posts.slice().reverse().forEach(post => {
         const div = document.createElement('div');
@@ -778,19 +803,29 @@
     }
 
     function likePost(id) {
+      if (!socket.connected) return;
       socket.emit('likePost', id);
       playLikeSound();
     }
 
     function toggleComments(id) {
       const commentsDiv = document.getElementById(`comments-${id}`);
-      commentsDiv.style.display = commentsDiv.style.display === 'block' ? 'none' : 'block';
+      if (commentsDiv) {
+        commentsDiv.style.display = commentsDiv.style.display === 'block' ? 'none' : 'block';
+      }
     }
 
     function addComment(id) {
       const input = document.getElementById(`commentInput-${id}`);
+      if (!input) return;
+      
       const text = input.value.trim();
       if (!text) return;
+
+      if (!socket.connected) {
+        alert('غير متصل بالخادم!');
+        return;
+      }
 
       socket.emit('addComment', {
         postId: id,
@@ -802,9 +837,11 @@
     }
 
     function joinRoom(room) {
+      if (!socket.connected) return;
       socket.emit('joinRoom', { room, name: myName });
     }
 
+    // --- تبديل الغرفة ---
     document.querySelectorAll('.tab').forEach(tab => {
       tab.addEventListener('click', () => {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -824,11 +861,14 @@
           tab.textContent = baseName;
           joinRoom(currentRoom);
         } else {
-          socket.emit('loadStatuses', []);
+          if (socket.connected) {
+            socket.emit('loadStatuses', []);
+          }
         }
       });
     });
 
+    // --- معالجات Socket.IO ---
     socket.on('loadMessages', (data) => {
       if (data.room === currentRoom) loadMessages(data.room, data.messages);
     });
@@ -837,14 +877,36 @@
 
     socket.on('onlineUsers', (data) => {
       if (data.room === currentRoom) {
-        document.getElementById('onlineCount').textContent = `متصلين: ${data.count}`;
+        const countEl = document.getElementById('onlineCount');
         const listEl = document.getElementById('onlineList');
-        listEl.innerHTML = `<b>المتصلون:</b> ${data.users.join(', ')}`;
-        listEl.style.display = 'block';
+        if (countEl) {
+          countEl.textContent = `متصلين: ${data.count}`;
+        }
+        if (listEl) {
+          listEl.innerHTML = `<b>المتصلون:</b> ${data.users.join(', ')}`;
+          listEl.style.display = 'block';
+        }
       }
     });
 
+    socket.on('userTyping', (data) => {
+      if (data.room === currentRoom && data.name !== myName) {
+        usersTyping.add(data.name);
+        updateTypingIndicator();
+      }
+    });
+
+    socket.on('userStoppedTyping', (data) => {
+      usersTyping.delete(data.name);
+      updateTypingIndicator();
+    });
+
     function sendText() {
+      if (!socket.connected) {
+        alert('غير متصل بالخادم! حاول إعادة التحميل.');
+        return;
+      }
+      
       const text = document.getElementById('msg').value.trim();
       if (!text) return;
       socket.emit('sendMessage', { room: currentRoom, name: myName, text });
@@ -858,22 +920,29 @@
 
       const progressContainer = document.getElementById('progressContainer');
       const progressBar = document.getElementById('progressBar');
-      progressContainer.style.display = 'block';
-      progressBar.style.width = '0%';
+      if (progressContainer && progressBar) {
+        progressContainer.style.display = 'block';
+        progressBar.style.width = '0%';
+      }
 
       const reader = new FileReader();
       reader.onprogress = (ev) => {
         if (ev.lengthComputable) {
           const percent = Math.round((ev.loaded / ev.total) * 100);
-          progressBar.style.width = percent + '%';
+          if (progressBar) {
+            progressBar.style.width = percent + '%';
+          }
         }
       };
 
       reader.onload = (ev) => {
+        if (!socket.connected) return;
         socket.emit('sendImage', { room: currentRoom, name: myName, image: ev.target.result });
         playSendSound();
         e.target.value = '';
-        progressContainer.style.display = 'none';
+        if (progressContainer) {
+          progressContainer.style.display = 'none';
+        }
       };
 
       reader.readAsDataURL(file);
@@ -881,6 +950,8 @@
 
     async function recordAudio() {
       const voiceBtn = document.querySelector('.voice-btn');
+      if (!voiceBtn) return;
+      
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         voiceBtn.classList.add('recording');
@@ -902,8 +973,10 @@
           const blob = new Blob(chunks, { type: 'audio/ogg; codecs=opus' });
           const reader = new FileReader();
           reader.onload = () => {
-            socket.emit('sendAudio', { room: currentRoom, name: myName, audio: reader.result });
-            playSendSound();
+            if (socket.connected) {
+              socket.emit('sendAudio', { room: currentRoom, name: myName, audio: reader.result });
+              playSendSound();
+            }
           };
           reader.readAsDataURL(blob);
         };
@@ -912,8 +985,10 @@
         setTimeout(() => { mediaRecorder.stop(); }, 8000);
 
       } catch (err) {
-        voiceBtn.classList.remove('recording');
-        voiceBtn.innerHTML = '🎤';
+        if (voiceBtn) {
+          voiceBtn.classList.remove('recording');
+          voiceBtn.innerHTML = '🎤';
+        }
         alert('لم يتمكن من استخدام الميكروفون: ' + (err.message || 'الإذن مرفوض'));
       }
     }
@@ -921,11 +996,19 @@
     function postStatus() {
       const text = document.getElementById('statusText').value.trim();
       if (!text) return;
+      if (!socket.connected) {
+        alert('غير متصل بالخادم!');
+        return;
+      }
       socket.emit('postStatus', { name: myName, text });
       document.getElementById('statusText').value = '';
     }
 
     function sendHeart() {
+      if (!socket.connected) {
+        alert('غير متصل بالخادم!');
+        return;
+      }
       socket.emit('sendMessage', { room: currentRoom, name: myName, text: '❤️' });
       playSendSound();
     }
@@ -959,6 +1042,8 @@
 
     socket.on('newStatus', (data) => {
       const feed = document.getElementById('statusFeed');
+      if (!feed) return;
+      
       const div = document.createElement('div');
       div.className = 'status-preview';
       div.innerHTML = `<b>${data.name}</b><br>${data.text}`;
@@ -983,9 +1068,20 @@
       }
     });
 
+    socket.on('connect', () => {
+      console.log('✅ متصل بالخادم');
+      joinRoom(currentRoom);
+    });
+
+    socket.on('disconnect', () => {
+      console.log('⚠️ انقطع الاتصال بالخادم');
+    });
+
     // --- لوحة الإيموجي ---
     function toggleEmojiPanel() {
       const panel = document.getElementById('emojiPanel');
+      if (!panel) return;
+      
       if (panel.style.display === 'flex') {
         panel.style.display = 'none';
       } else {
@@ -995,8 +1091,11 @@
           span.className = 'emoji-item';
           span.textContent = emoji;
           span.onclick = () => {
-            document.getElementById('msg').value += emoji;
-            document.getElementById('msg').focus();
+            const msgInput = document.getElementById('msg');
+            if (msgInput) {
+              msgInput.value += emoji;
+              msgInput.focus();
+            }
             panel.style.display = 'none';
           };
           panel.appendChild(span);
@@ -1008,7 +1107,7 @@
     document.addEventListener('click', (e) => {
       const panel = document.getElementById('emojiPanel');
       const btn = document.querySelector('.emoji-btn');
-      if (!panel.contains(e.target) && e.target !== btn) {
+      if (panel && btn && !panel.contains(e.target) && e.target !== btn) {
         panel.style.display = 'none';
       }
     });
@@ -1016,6 +1115,8 @@
     // --- النجوم المتحركة ---
     function createStars(containerId) {
       const starsContainer = document.getElementById(containerId);
+      if (!starsContainer) return;
+      
       starsContainer.innerHTML = '';
       for (let i = 0; i < 100; i++) {
         const star = document.createElement('div');
@@ -1029,10 +1130,14 @@
       }
     }
 
-    createStars('stars-family');
-    createStars('stars-public');
-    createStars('stars-status');
-    createStars('stars-posts');
+    // توليد النجوم بعد التحميل
+    window.addEventListener('load', () => {
+      createStars('stars-family');
+      createStars('stars-public');
+      createStars('stars-status');
+      createStars('stars-posts');
+      setupTypingListener();
+    });
 
     window.addEventListener('resize', () => {
       createStars('stars-family');
@@ -1041,7 +1146,10 @@
       createStars('stars-posts');
     });
 
-    joinRoom(currentRoom);
+    // بدء الاتصال
+    if (socket.connected) {
+      joinRoom(currentRoom);
+    }
   </script>
 </body>
   </html>
