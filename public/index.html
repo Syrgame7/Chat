@@ -2,8 +2,9 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neon Chat</title>
+    <!-- إضافة interactive-widget لحل مشكلة الكيبورد في الاندرويد -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
+    <title>Neon Chat Pro</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
 
@@ -20,7 +21,8 @@
         body {
             background-color: var(--bg-color);
             color: #fff;
-            height: 100vh;
+            /* استخدام dvh لضمان ملء الشاشة بشكل صحيح على الموبايل */
+            height: 100dvh; 
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -40,13 +42,9 @@
         }
 
         .neon-title {
-            font-size: 3rem;
+            font-size: 2.5rem;
             color: #fff;
-            text-shadow: 
-                0 0 5px #fff,
-                0 0 10px #fff,
-                0 0 20px var(--neon-pink),
-                0 0 40px var(--neon-pink);
+            text-shadow: 0 0 10px var(--neon-pink), 0 0 20px var(--neon-pink);
             animation: flicker 1.5s infinite alternate;
         }
 
@@ -61,84 +59,91 @@
             box-shadow: 0 0 10px var(--neon-blue);
             outline: none;
             width: 80%;
-            max-width: 300px;
         }
 
         #joinBtn {
-            padding: 10px 30px;
+            padding: 10px 40px;
             background: var(--neon-pink);
             border: none;
             color: #fff;
             font-weight: bold;
             font-size: 1.2rem;
             border-radius: 5px;
-            cursor: pointer;
             box-shadow: 0 0 15px var(--neon-pink);
-            transition: 0.3s;
         }
-        #joinBtn:hover { transform: scale(1.1); box-shadow: 0 0 25px var(--neon-pink); }
 
         /* --- الشات الرئيسي --- */
         .main-container {
             display: flex;
             flex-direction: column;
             height: 100%;
-            display: none; /* مخفي حتى تسجيل الدخول */
+            display: none;
         }
 
-        /* شريط المتصلين */
         .online-bar {
-            background: rgba(0, 0, 0, 0.8);
+            background: #111;
             padding: 10px;
             border-bottom: 1px solid var(--neon-blue);
             display: flex;
             align-items: center;
             gap: 10px;
             overflow-x: auto;
-            white-space: nowrap;
-            box-shadow: 0 5px 15px rgba(0, 243, 255, 0.1);
+            height: 60px;
+            flex-shrink: 0;
         }
-        
-        .online-title { color: var(--neon-blue); font-weight: bold; font-size: 0.9rem; margin-left: 10px; }
         
         .user-badge {
             background: rgba(0, 243, 255, 0.1);
             border: 1px solid var(--neon-blue);
-            padding: 5px 10px;
+            padding: 4px 10px;
             border-radius: 15px;
             font-size: 0.8rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
+            white-space: nowrap;
+            color: #fff;
         }
-        .dot { width: 8px; height: 8px; background: var(--neon-green); border-radius: 50%; box-shadow: 0 0 5px var(--neon-green); }
 
-        /* منطقة الرسائل */
         #chatBox {
             flex: 1;
             overflow-y: auto;
-            padding: 20px;
+            padding: 15px;
             display: flex;
             flex-direction: column;
             gap: 15px;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch; /* نعومة التمرير في iOS */
         }
 
         .message {
-            max-width: 80%;
-            padding: 10px 15px;
+            max-width: 85%;
+            padding: 10px;
             border-radius: 10px;
             position: relative;
             font-size: 0.95rem;
-            line-height: 1.4;
+            word-wrap: break-word;
             animation: pop 0.3s ease;
+        }
+
+        /* تنسيق الصور داخل الشات */
+        .msg-image {
+            max-width: 100%;
+            border-radius: 8px;
+            margin-top: 5px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        /* تنسيق مشغل الصوت */
+        .msg-audio {
+            width: 100%;
+            margin-top: 5px;
+            height: 40px;
         }
 
         .system-msg {
             align-self: center;
             color: #888;
-            font-size: 0.8rem;
-            background: rgba(255,255,255,0.1);
-            padding: 5px 10px;
+            font-size: 0.75rem;
+            background: rgba(255,255,255,0.05);
+            padding: 5px 15px;
             border-radius: 20px;
         }
 
@@ -146,7 +151,7 @@
             align-self: flex-start;
             border: 1px solid var(--neon-pink);
             background: rgba(188, 19, 254, 0.1);
-            box-shadow: 0 0 5px rgba(188, 19, 254, 0.2);
+            box-shadow: 0 0 5px rgba(188, 19, 254, 0.15);
             border-top-right-radius: 0;
         }
         
@@ -154,97 +159,165 @@
             align-self: flex-end;
             border: 1px solid var(--neon-blue);
             background: rgba(0, 243, 255, 0.1);
-            box-shadow: 0 0 5px rgba(0, 243, 255, 0.2);
+            box-shadow: 0 0 5px rgba(0, 243, 255, 0.15);
             border-top-left-radius: 0;
         }
 
         .sender-name {
             font-size: 0.7rem;
             opacity: 0.7;
-            margin-bottom: 3px;
+            margin-bottom: 4px;
             color: var(--neon-green);
+            font-weight: bold;
         }
 
-        /* منطقة الإدخال */
+        /* منطقة الإدخال المحسنة للموبايل */
         .input-area {
-            padding: 15px;
-            background: #111;
+            padding: 10px;
+            background: #0a0a0a;
             display: flex;
-            gap: 10px;
-            border-top: 1px solid var(--neon-green);
+            align-items: center;
+            gap: 8px;
+            border-top: 1px solid #333;
+            /* التعامل مع المناطق الآمنة في الآيفون والأندرويد الحديث */
+            padding-bottom: max(10px, env(safe-area-inset-bottom)); 
         }
 
-        #msgInput {
-            flex: 1;
-            background: #222;
-            border: none;
-            padding: 12px;
-            color: #fff;
-            border-radius: 25px;
-            outline: none;
-        }
-        #msgInput:focus { box-shadow: 0 0 5px var(--neon-green); }
-
-        #sendBtn {
-            background: var(--neon-green);
-            border: none;
-            width: 45px;
-            height: 45px;
+        .action-btn {
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
+            border: 1px solid #444;
+            background: #222;
+            color: #fff;
             display: flex;
             justify-content: center;
             align-items: center;
             cursor: pointer;
-            box-shadow: 0 0 10px var(--neon-green);
+            font-size: 1.2rem;
+            transition: 0.2s;
+            flex-shrink: 0;
+        }
+        .action-btn:active { transform: scale(0.9); }
+        
+        /* زر التسجيل النشط */
+        .recording {
+            background: var(--neon-pink) !important;
+            box-shadow: 0 0 15px var(--neon-pink);
+            animation: pulse 1s infinite;
         }
 
-        @keyframes flicker {
-            0%, 18%, 22%, 25%, 53%, 57%, 100% { opacity: 1; }
-            20%, 24%, 55% { opacity: 0.4; }
+        #msgInput {
+            flex: 1;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            padding: 10px 15px;
+            color: #fff;
+            border-radius: 20px;
+            outline: none;
+            font-size: 1rem;
+            min-height: 40px;
         }
-        @keyframes pop { from { transform: scale(0); } to { transform: scale(1); } }
+        #msgInput:focus { border-color: var(--neon-blue); }
+
+        #sendBtn {
+            background: var(--neon-blue);
+            border: none;
+            color: #000;
+            box-shadow: 0 0 10px var(--neon-blue);
+        }
+
+        /* Hidden File Input */
+        #fileInput { display: none; }
+
+        @keyframes flicker { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        @keyframes pop { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
 
     </style>
 </head>
 <body>
 
-    <!-- صوت إشعار داخلي (Base64) -->
-    <audio id="notifSound" src="data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU"></audio>
+    <!-- أصوات النظام (Base64 قصير وسريع) -->
+    <!-- صوت الإرسال (Pop ناعم) -->
+    <audio id="sendSound" src="data:audio/wav;base64,UklGRi4AAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA="></audio> 
+    <!-- سأقوم بوضع كود JS لتعبئة الأصوات بروابط Base64 حقيقية أدناه لضمان العمل -->
 
     <!-- شاشة الدخول -->
     <div id="loginScreen">
         <h1 class="neon-title">NEON CHAT</h1>
-        <input type="text" id="usernameInput" placeholder="أدخل اسمك المستعار" maxlength="15">
+        <input type="text" id="usernameInput" placeholder="الاسم المستعار" maxlength="15">
         <button id="joinBtn">دخول</button>
     </div>
 
     <!-- التطبيق الرئيسي -->
     <div class="main-container" id="mainApp">
-        <!-- شريط المتصلين -->
         <div class="online-bar" id="onlineList">
-            <span class="online-title">المتصلون:</span>
-            <!-- سيتم إضافة المستخدمين هنا -->
+            <span style="color:var(--neon-blue); font-weight:bold; font-size:0.9rem">المتصلون:</span>
         </div>
 
-        <!-- المحادثة -->
         <div id="chatBox"></div>
 
-        <!-- الإدخال -->
         <div class="input-area">
-            <input type="text" id="msgInput" placeholder="اكتب رسالة..." autocomplete="off">
-            <button id="sendBtn">➤</button>
+            <!-- زر الصورة -->
+            <button class="action-btn" id="imgBtn">📷</button>
+            <input type="file" id="fileInput" accept="image/*">
+
+            <!-- زر الميكروفون -->
+            <button class="action-btn" id="micBtn">🎤</button>
+
+            <!-- حقل النص -->
+            <input type="text" id="msgInput" placeholder="رسالة..." autocomplete="off">
+            
+            <!-- زر الإرسال -->
+            <button class="action-btn" id="sendBtn">➤</button>
         </div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        // صوت التنبيه القصير جداً (Beep)
-        const soundUri = "data:audio/mp3;base64,//uQRAAAAWMSLwUIYAAsYkXgoQwAEaYLWfkWgAI0wWs/ItAAAGDgYtAgAyN+QWaAAihwMWm4G8QQRbVMkgjgqXBZ3CYkCJED18u9++CCMpQt9579/gL/4Euf/5B8R39//4Q////+Nv/8Qf///9v//+Qf/////////9//4YAAAAAAWMSLwUIYAAsYkXgoQwAEaYLWfkWgAI0wWs/ItAAAGDgYtAgAyN+QWaAAihwMWm4G8QQRbVMkgjgqXBZ3CYkCJED18u9++CCMpQt9579/gL/4Euf/5B8R39//4Q////+Nv/8Qf///9v//+Qf/////////9//4Y";
-        const audio = new Audio(soundUri);
+        // --- إعداد الأصوات (Base64 حقيقي) ---
+        
+        // صوت الإرسال (Pop Sound)
+        const sendAudioSrc = "data:audio/mp3;base64,//uQRAAAAWMSLwUIYAAsYkXgoQwAEaYLWfkWgAI0wWs/ItAAAGDgYtAgAyN+QWaAAihwMWm4G8QQRbVMkgjgqXBZ3CYkCJED18u9++CCMpQt9579/gL/4Euf/5B8R39//4Q////+Nv/8Qf///9v//+Qf/////////9//4Y"; 
+        
+        // صوت الاستلام (Ding Sound)
+        const receiveAudioSrc = "data:audio/mp3;base64,//uQRAAAAWMSLwUIYAAsYkXgoQwAEaYLWfkWgAI0wWs/ItAAAGDgYtAgAyN+QWaAAihwMWm4G8QQRbVMkgjgqXBZ3CYkCJED18u9++CCMpQt9579/gL/4Euf/5B8R39//4Q////+Nv/8Qf///9v//+Qf/////////9//4Y"; // (للاختصار استخدمت نفس الصوت كمثال، لكن في التطبيق يفضل تغييره)
+        
+        // دعنا نستخدم أصواتاً مختلفة قليلاً برمجياً
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playTone(type) {
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            if (type === 'send') {
+                // صوت خفيف عالي التردد (إرسال)
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
+                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                oscillator.start();
+                gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.1);
+                oscillator.stop(audioCtx.currentTime + 0.1);
+            } else {
+                // صوت أعمق (استلام)
+                oscillator.type = 'triangle';
+                oscillator.frequency.setValueAtTime(400, audioCtx.currentTime);
+                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                oscillator.start();
+                gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.3);
+                oscillator.stop(audioCtx.currentTime + 0.3);
+            }
+        }
 
+        // --- المتغيرات ---
         const socket = io();
         let myName = "";
-
+        
+        // DOM Elements
         const loginScreen = document.getElementById('loginScreen');
         const mainApp = document.getElementById('mainApp');
         const usernameInput = document.getElementById('usernameInput');
@@ -252,37 +325,110 @@
         const chatBox = document.getElementById('chatBox');
         const msgInput = document.getElementById('msgInput');
         const sendBtn = document.getElementById('sendBtn');
-        const onlineList = document.getElementById('onlineList');
+        const imgBtn = document.getElementById('imgBtn');
+        const fileInput = document.getElementById('fileInput');
+        const micBtn = document.getElementById('micBtn');
 
-        // 1. الدخول للتطبيق
-        joinBtn.addEventListener('click', enterChat);
-        usernameInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') enterChat() });
-
+        // --- تسجيل الدخول ---
         function enterChat() {
             const name = usernameInput.value.trim();
             if(!name) return;
-            
             myName = name;
             loginScreen.style.display = 'none';
             mainApp.style.display = 'flex';
-            
             socket.emit('join', myName);
+            // تفعيل الصوت (Context)
+            if(audioCtx.state === 'suspended') audioCtx.resume();
         }
 
-        // 2. إرسال الرسائل
-        sendBtn.addEventListener('click', sendMessage);
-        msgInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') sendMessage() });
+        joinBtn.addEventListener('click', enterChat);
+        usernameInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') enterChat() });
 
-        function sendMessage() {
+        // --- 1. إرسال النصوص ---
+        function sendText() {
             const text = msgInput.value.trim();
             if(!text) return;
-
-            socket.emit('chatMessage', text);
+            
+            socket.emit('chatMessage', { type: 'text', content: text });
+            playTone('send');
             msgInput.value = '';
             msgInput.focus();
         }
+        sendBtn.addEventListener('click', sendText);
+        msgInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') sendText() });
 
-        // 3. استقبال الرسائل
+        // --- 2. إرسال الصور ---
+        imgBtn.addEventListener('click', () => fileInput.click());
+        
+        fileInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    socket.emit('chatMessage', {
+                        type: 'image',
+                        content: e.target.result // Base64 Image
+                    });
+                    playTone('send');
+                };
+                reader.readAsDataURL(file);
+                this.value = ''; // reset
+            }
+        });
+
+        // --- 3. التسجيل الصوتي (Native) ---
+        let mediaRecorder;
+        let audioChunks = [];
+        let isRecording = false;
+
+        micBtn.addEventListener('click', async () => {
+            if (!isRecording) {
+                // بدء التسجيل
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+
+                    mediaRecorder.ondataavailable = event => {
+                        audioChunks.push(event.data);
+                    };
+
+                    mediaRecorder.onstop = () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        const reader = new FileReader();
+                        reader.readAsDataURL(audioBlob);
+                        reader.onloadend = () => {
+                            const base64Audio = reader.result;
+                            socket.emit('chatMessage', {
+                                type: 'audio',
+                                content: base64Audio
+                            });
+                            playTone('send');
+                        };
+                    };
+
+                    mediaRecorder.start();
+                    isRecording = true;
+                    micBtn.classList.add('recording');
+                    msgInput.placeholder = "جاري التسجيل... اضغط مرة أخرى للإرسال";
+                    msgInput.disabled = true;
+
+                } catch (err) {
+                    alert("لا يمكن الوصول للميكروفون: " + err);
+                }
+            } else {
+                // إيقاف التسجيل والإرسال
+                mediaRecorder.stop();
+                isRecording = false;
+                micBtn.classList.remove('recording');
+                msgInput.placeholder = "رسالة...";
+                msgInput.disabled = false;
+                // إيقاف التراكات
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            }
+        });
+
+        // --- استقبال الرسائل ---
         socket.on('message', (data) => {
             const div = document.createElement('div');
             
@@ -290,19 +436,28 @@
                 div.classList.add('system-msg');
                 div.innerText = data.text;
             } else {
+                // تحديد نوع الرسالة (أنا أم الآخرين)
+                const isMe = (data.user === myName);
                 div.classList.add('message');
-                if (data.user === myName) {
-                    div.classList.add('sent');
-                } else {
-                    div.classList.add('received');
-                    // تشغيل الصوت فقط إذا لم أكن أنا المرسل
-                    audio.currentTime = 0;
-                    audio.play().catch(e => console.log("Audio autoplay blocked"));
-                }
+                div.classList.add(isMe ? 'sent' : 'received');
                 
+                // تشغيل صوت الاستلام إذا لم أكن أنا المرسل
+                if (!isMe) playTone('receive');
+
+                // بناء المحتوى بناءً على النوع
+                let contentHtml = '';
+                
+                if (data.type === 'text') {
+                    contentHtml = `<div>${data.content}</div>`;
+                } else if (data.type === 'image') {
+                    contentHtml = `<img src="${data.content}" class="msg-image" alt="Image">`;
+                } else if (data.type === 'audio') {
+                    contentHtml = `<audio controls src="${data.content}" class="msg-audio"></audio>`;
+                }
+
                 div.innerHTML = `
                     <div class="sender-name">${data.user}</div>
-                    ${data.text}
+                    ${contentHtml}
                 `;
             }
             
@@ -310,16 +465,15 @@
             chatBox.scrollTop = chatBox.scrollHeight;
         });
 
-        // 4. تحديث قائمة المتصلين
-        socket.on('updateUserList', (usersArray) => {
-            // إبقاء العنوان
-            onlineList.innerHTML = '<span class="online-title">المتصلون:</span>';
-            
-            usersArray.forEach(user => {
+        // تحديث قائمة المستخدمين
+        socket.on('updateUserList', (users) => {
+            const list = document.getElementById('onlineList');
+            list.innerHTML = '<span style="color:var(--neon-blue); font-weight:bold;">المتصلون:</span>';
+            users.forEach(u => {
                 const span = document.createElement('span');
                 span.className = 'user-badge';
-                span.innerHTML = `<span class="dot"></span> ${user}`;
-                onlineList.appendChild(span);
+                span.textContent = u;
+                list.appendChild(span);
             });
         });
     </script>
