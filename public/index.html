@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-    <title>Neon Chat Ultimate</title>
+    <title>Neon Galaxy Chat</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
 
@@ -11,8 +11,7 @@
             --bg-color: #050505;
             --neon-blue: #00f3ff;
             --neon-pink: #bc13fe;
-            --neon-green: #0aff0a;
-            --neon-yellow: #ffee00;
+            --neon-green: #0aff0a; 
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Cairo', sans-serif; }
@@ -27,7 +26,7 @@
             position: relative;
         }
 
-        /* --- خلفية النجوم المتحركة --- */
+        /* --- 1. تكثيف النجوم (تمت إضافة الكثير من النقاط) --- */
         .stars-bg {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -38,12 +37,27 @@
                 radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 2px),
                 radial-gradient(white, rgba(255,255,255,.1) 2px, transparent 3px);
             background-size: 550px 550px, 350px 350px, 250px 250px;
-            background-position: 0 0, 40px 60px, 130px 270px;
-            animation: starMove 60s linear infinite;
+            /* زيادة كثافة النجوم هنا */
+            background-position: 
+                0 0, 40px 60px, 130px 270px, 70px 100px, 
+                150px 150px, 300px 300px, 450px 100px, 
+                20px 300px, 200px 20px, 400px 400px,
+                90px 20px, 320px 120px, 420px 280px;
+            animation: starMove 120s linear infinite; /* حركة أبطأ لتبدو واقعية */
         }
         @keyframes starMove {
-            from { background-position: 0 0, 40px 60px, 130px 270px; }
-            to { background-position: 550px 550px, 390px 410px, 380px 520px; }
+            from { background-position: 
+                0 0, 40px 60px, 130px 270px, 70px 100px, 
+                150px 150px, 300px 300px, 450px 100px, 
+                20px 300px, 200px 20px, 400px 400px,
+                90px 20px, 320px 120px, 420px 280px; 
+            }
+            to { background-position: 
+                550px 550px, 590px 610px, 680px 820px, 620px 650px,
+                700px 700px, 850px 850px, 1000px 650px,
+                570px 850px, 750px 570px, 950px 950px,
+                640px 570px, 870px 670px, 970px 830px;
+            }
         }
 
         /* --- شاشة الدخول --- */
@@ -57,7 +71,7 @@
             justify-content: center;
             align-items: center;
             gap: 20px;
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(5px);
         }
 
         .neon-title {
@@ -71,7 +85,7 @@
         #usernameInput {
             padding: 15px;
             font-size: 1.2rem;
-            background: rgba(255,255,255,0.05);
+            background: rgba(255,255,255,0.1);
             border: 2px solid var(--neon-blue);
             color: #fff;
             border-radius: 15px;
@@ -99,51 +113,42 @@
             display: none;
         }
 
-        /* --- قسم الحالات --- */
+        /* --- 2. تعديل ألوان الحالات (Status) --- */
         .status-bar {
-            background: rgba(255,255,255,0.03);
+            background: rgba(0,0,0,0.3); /* شفافية أكثر */
             padding: 10px;
             display: flex;
             gap: 10px;
             overflow-x: auto;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
             height: 85px;
             flex-shrink: 0;
+            border-bottom: 1px solid rgba(0, 243, 255, 0.3);
         }
 
         .add-status-btn {
-            min-width: 60px;
-            height: 60px;
+            min-width: 60px; height: 60px;
             border-radius: 15px;
             border: 2px dashed var(--neon-green);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 1.5rem;
-            color: var(--neon-green);
-            cursor: pointer;
-            background: rgba(0, 255, 0, 0.05);
+            display: flex; justify-content: center; align-items: center;
+            font-size: 1.5rem; color: var(--neon-green);
+            cursor: pointer; background: rgba(0, 255, 0, 0.1);
         }
 
         .status-card {
-            min-width: 120px;
-            max-width: 150px;
-            height: 60px;
-            background: rgba(0,0,0,0.6);
+            min-width: 120px; max-width: 160px; height: 60px;
+            background: rgba(20, 20, 20, 0.9); /* خلفية غامقة للنص */
             border: 1px solid var(--neon-pink);
             border-radius: 12px;
-            padding: 5px 8px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            position: relative;
-            font-size: 0.8rem;
+            padding: 5px 10px;
+            display: flex; flex-direction: column; justify-content: space-between;
             cursor: pointer;
             box-shadow: 0 0 5px rgba(188, 19, 254, 0.2);
         }
+        /* جعل اسم صاحب الحالة بلون مميز */
         .status-user { font-weight: bold; color: var(--neon-blue); font-size: 0.7rem; }
-        .status-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .status-like { align-self: flex-end; color: #ff4444; font-size: 0.8rem; }
+        /* جعل نص الحالة أبيض ناصع */
+        .status-text { color: #ffffff; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+        .status-like { align-self: flex-end; color: #ff4444; font-size: 0.75rem; }
 
         /* --- الشات --- */
         #chatBox {
@@ -163,120 +168,109 @@
             font-size: 0.95rem;
             backdrop-filter: blur(4px);
             z-index: 1;
+            display: flex;
+            flex-direction: column;
         }
 
-        .msg-image { max-width: 100%; border-radius: 8px; border: 1px solid #fff; }
+        .msg-image { max-width: 100%; border-radius: 8px; border: 1px solid #fff; margin-top: 5px; }
         .msg-audio { width: 100%; height: 35px; margin-top: 5px; }
+
+        /* 3. جعل الأسماء بالأخضر النيون الساطع */
+        .sender-name {
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: var(--neon-green); /* اللون الأخضر */
+            text-shadow: 0 0 3px rgba(10, 255, 10, 0.5); /* توهج بسيط */
+            margin-bottom: 5px;
+        }
 
         .received {
             align-self: flex-start;
             border: 1px solid var(--neon-pink);
-            background: rgba(188, 19, 254, 0.1);
+            background: rgba(20, 20, 20, 0.8); /* خلفية أغمق للقراءة */
             box-shadow: 0 0 10px rgba(188, 19, 254, 0.1);
             border-top-right-radius: 0;
         }
+        .received .msg-content { color: #fff; }
 
         .sent {
             align-self: flex-end;
             border: 1px solid var(--neon-blue);
-            background: rgba(0, 243, 255, 0.1);
+            background: rgba(20, 20, 20, 0.8);
             box-shadow: 0 0 10px rgba(0, 243, 255, 0.1);
             border-top-left-radius: 0;
         }
+        /* إخفاء اسمي أنا عند الإرسال لتوفير المساحة أو جعله بلون مختلف */
+        .sent .sender-name { display: none; } 
 
         .system-msg {
             align-self: center;
-            background: rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.15);
+            color: #fff;
             padding: 5px 15px;
             border-radius: 20px;
             font-size: 0.75rem;
             border: 1px solid rgba(255,255,255,0.2);
+            text-shadow: 0 0 2px #000;
         }
 
-        /* --- تأثير البارتكل --- */
+        /* البارتكل */
         .particle {
-            position: absolute;
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            pointer-events: none;
-            animation: explode 0.8s ease-out forwards;
-            z-index: 10;
+            position: absolute; width: 5px; height: 5px; border-radius: 50%;
+            pointer-events: none; animation: explode 0.8s ease-out forwards; z-index: 10;
         }
         @keyframes explode {
             0% { transform: translate(0,0) scale(1); opacity: 1; }
             100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
         }
 
-        /* --- منطقة الإدخال --- */
+        /* الإدخال */
         .input-area {
             padding: 10px;
-            background: rgba(0,0,0,0.8);
+            background: rgba(10, 10, 10, 0.95);
             border-top: 1px solid var(--neon-blue);
-            display: flex;
-            gap: 8px;
-            align-items: center;
+            display: flex; gap: 8px; align-items: center;
             padding-bottom: max(10px, env(safe-area-inset-bottom));
         }
 
         #msgInput {
-            flex: 1;
-            background: rgba(255,255,255,0.08);
-            border: none;
-            padding: 12px;
-            border-radius: 25px;
-            color: #fff;
-            outline: none;
+            flex: 1; background: #222; border: 1px solid #444;
+            padding: 12px; border-radius: 25px; color: #fff; outline: none;
         }
+        #msgInput:focus { border-color: var(--neon-blue); }
 
         .action-btn {
-            width: 40px; height: 40px;
-            border-radius: 50%;
-            border: none;
-            background: rgba(255,255,255,0.1);
-            color: #fff;
-            font-size: 1.2rem;
-            cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
+            width: 40px; height: 40px; border-radius: 50%; border: none;
+            background: #333; color: #fff; font-size: 1.2rem;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
         }
-        #sendBtn { background: var(--neon-blue); color: #000; box-shadow: 0 0 10px var(--neon-blue); }
+        #sendBtn { background: var(--neon-blue); color: #000; }
         .recording { background: var(--neon-pink) !important; animation: pulseTitle 1s infinite; }
 
         @keyframes pulseTitle { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
-
     </style>
 </head>
 <body>
 
-    <!-- الخلفية -->
     <div class="stars-bg"></div>
 
-    <!-- شاشة الدخول -->
     <div id="loginScreen">
         <h1 class="neon-title">NEON GALAXY</h1>
         <input type="text" id="usernameInput" placeholder="اسمك الفضائي" maxlength="12">
         <button id="joinBtn">INFILTRATE</button>
     </div>
 
-    <!-- التطبيق الرئيسي -->
     <div class="main-container" id="mainApp">
-        
-        <!-- شريط الحالات -->
         <div class="status-bar" id="statusBar">
             <div class="add-status-btn" id="addStatusBtn">+</div>
-            <!-- سيتم إضافة الحالات هنا -->
         </div>
 
-        <!-- الشات -->
         <div id="chatBox"></div>
 
-        <!-- الإدخال -->
         <div class="input-area">
             <button class="action-btn" id="imgBtn">📷</button>
             <input type="file" id="fileInput" accept="image/*" style="display:none">
-            
             <button class="action-btn" id="micBtn">🎤</button>
-            
             <input type="text" id="msgInput" placeholder="اكتب رسالة..." autocomplete="off">
             <button class="action-btn" id="sendBtn">➤</button>
         </div>
@@ -284,10 +278,10 @@
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        // --- إعداد الصوت (Web Audio API) ---
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         const audioCtx = new AudioContext();
 
+        // --- 4. تحسين الصوت ليكون أقوى ---
         function playSound(type) {
             if(audioCtx.state === 'suspended') audioCtx.resume();
             
@@ -295,45 +289,45 @@
             const gain = audioCtx.createGain();
             osc.connect(gain);
             gain.connect(audioCtx.destination);
-
             const now = audioCtx.currentTime;
 
             if (type === 'send') {
-                // صوت "Pop"
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(600, now);
-                osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
-                gain.gain.setValueAtTime(0.2, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-                osc.start(now);
-                osc.stop(now + 0.1);
-
-            } else if (type === 'receive') {
-                // صوت "Ding" ناعم
+                // صوت خفيف عند الإرسال
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(800, now);
-                gain.gain.setValueAtTime(0.2, now);
+                osc.frequency.exponentialRampToValueAtTime(100, now + 0.15);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.15);
+                osc.start(now);
+                osc.stop(now + 0.15);
+
+            } else if (type === 'receive') {
+                // صوت قوي ورنان عند الاستقبال
+                osc.type = 'triangle'; // موجة أقوى من sine
+                osc.frequency.setValueAtTime(500, now);
+                osc.frequency.linearRampToValueAtTime(1000, now + 0.1); // نغمة تصاعدية "Ding"
+                
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(0.4, now + 0.05); // رفع الصوت
                 gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                
                 osc.start(now);
                 osc.stop(now + 0.5);
 
             } else if (type === 'join') {
-                // صوت "Sci-fi Join" (تردد متصاعد)
-                osc.type = 'triangle';
+                osc.type = 'sawtooth';
                 osc.frequency.setValueAtTime(200, now);
-                osc.frequency.linearRampToValueAtTime(600, now + 0.3);
-                gain.gain.setValueAtTime(0.1, now);
-                gain.gain.linearRampToValueAtTime(0, now + 0.3);
+                osc.frequency.linearRampToValueAtTime(600, now + 0.4);
+                gain.gain.setValueAtTime(0.05, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.4);
                 osc.start(now);
-                osc.stop(now + 0.3);
+                osc.stop(now + 0.4);
             }
         }
 
-        // --- منطق التطبيق ---
         const socket = io();
         let myName = "";
 
-        // العناصر
         const loginScreen = document.getElementById('loginScreen');
         const mainApp = document.getElementById('mainApp');
         const chatBox = document.getElementById('chatBox');
@@ -341,7 +335,6 @@
         const statusBar = document.getElementById('statusBar');
         const addStatusBtn = document.getElementById('addStatusBtn');
 
-        // الدخول
         document.getElementById('joinBtn').addEventListener('click', () => {
             const name = document.getElementById('usernameInput').value.trim();
             if(!name) return;
@@ -349,33 +342,27 @@
             loginScreen.style.display = 'none';
             mainApp.style.display = 'flex';
             socket.emit('join', name);
+            // تفعيل الصوت عند أول لمسة
+            if(audioCtx.state === 'suspended') audioCtx.resume();
             playSound('join');
         });
 
-        // --- نظام البارتكل (المؤثرات) ---
         function createParticles(x, y, color) {
-            for(let i=0; i<12; i++) {
+            for(let i=0; i<10; i++) {
                 const p = document.createElement('div');
                 p.classList.add('particle');
                 p.style.backgroundColor = color;
                 p.style.left = x + 'px';
                 p.style.top = y + 'px';
-                
-                // حساب اتجاه عشوائي
                 const angle = Math.random() * Math.PI * 2;
-                const dist = 30 + Math.random() * 50;
-                const tx = Math.cos(angle) * dist + 'px';
-                const ty = Math.sin(angle) * dist + 'px';
-                
-                p.style.setProperty('--tx', tx);
-                p.style.setProperty('--ty', ty);
-                
+                const dist = 20 + Math.random() * 40;
+                p.style.setProperty('--tx', Math.cos(angle) * dist + 'px');
+                p.style.setProperty('--ty', Math.sin(angle) * dist + 'px');
                 document.body.appendChild(p);
                 setTimeout(() => p.remove(), 800);
             }
         }
 
-        // --- الإرسال والاستقبال ---
         function appendMessage(data) {
             const div = document.createElement('div');
             const isMe = (data.user === myName);
@@ -388,41 +375,46 @@
                 div.className = `message ${isMe ? 'sent' : 'received'}`;
                 
                 let content = '';
-                if(data.type === 'text') content = `<div>${data.content}</div>`;
+                if(data.type === 'text') content = `<div class="msg-content">${data.content}</div>`;
                 else if(data.type === 'image') content = `<img src="${data.content}" class="msg-image">`;
                 else if(data.type === 'audio') content = `<audio controls src="${data.content}" class="msg-audio"></audio>`;
 
-                div.innerHTML = `<div style="font-size:0.7rem; color:${isMe?'#000':'var(--neon-green)'}; margin-bottom:4px;">${data.user}</div>${content}`;
+                // تم وضع الاسم داخل span مع كلاس sender-name ليأخذ اللون الأخضر
+                div.innerHTML = `
+                    <span class="sender-name">${data.user}</span>
+                    ${content}
+                `;
                 
-                if(!isMe) playSound('receive');
+                if(!isMe) {
+                    playSound('receive');
+                    // تأثير ضوئي بسيط عند الاستلام
+                    document.body.style.boxShadow = "inset 0 0 20px var(--neon-pink)";
+                    setTimeout(() => document.body.style.boxShadow = "none", 200);
+                }
             }
             
             chatBox.appendChild(div);
             chatBox.scrollTop = chatBox.scrollHeight;
 
-            // تشغيل البارتكل عند موقع الرسالة الجديدة
             setTimeout(() => {
                 const rect = div.getBoundingClientRect();
-                const color = isMe ? '#00f3ff' : '#bc13fe';
-                // البارتكل تخرج من مركز الرسالة
-                createParticles(rect.left + rect.width/2, rect.top + rect.height/2, color);
+                createParticles(rect.left + rect.width/2, rect.top + rect.height/2, isMe ? '#00f3ff' : '#bc13fe');
             }, 50);
         }
 
         socket.on('message', appendMessage);
 
-        // إرسال نص
         function sendMessage() {
             const txt = msgInput.value.trim();
             if(!txt) return;
             socket.emit('chatMessage', { type: 'text', content: txt });
             playSound('send');
             msgInput.value = '';
+            msgInput.focus();
         }
         document.getElementById('sendBtn').addEventListener('click', sendMessage);
         msgInput.addEventListener('keypress', (e) => { if(e.key==='Enter') sendMessage() });
 
-        // إرسال صورة
         const fileInput = document.getElementById('fileInput');
         document.getElementById('imgBtn').addEventListener('click', () => fileInput.click());
         fileInput.addEventListener('change', function() {
@@ -437,7 +429,6 @@
             }
         });
 
-        // تسجيل صوتي
         let mediaRec;
         let chunks = [];
         let recording = false;
@@ -452,10 +443,10 @@
                     mediaRec.ondataavailable = e => chunks.push(e.data);
                     mediaRec.onstop = () => {
                         const blob = new Blob(chunks, {type:'audio/webm'});
-                        const reader = new FileReader();
-                        reader.readAsDataURL(blob);
-                        reader.onloadend = () => {
-                            socket.emit('chatMessage', { type:'audio', content: reader.result });
+                        const r = new FileReader();
+                        r.readAsDataURL(blob);
+                        r.onloadend = () => {
+                            socket.emit('chatMessage', { type:'audio', content: r.result });
                             playSound('send');
                         };
                     };
@@ -471,19 +462,14 @@
             }
         });
 
-        // --- منطق الحالات (Status) ---
         addStatusBtn.addEventListener('click', () => {
-            const text = prompt("اكتب حالتك الجديدة (نص قصير):");
-            if(text) {
-                socket.emit('publishStatus', text);
-            }
+            const text = prompt("اكتب حالتك الجديدة:");
+            if(text) socket.emit('publishStatus', text);
         });
 
         socket.on('updateStatuses', (statuses) => {
-            // إفراغ الشريط ما عدا زر الإضافة
             statusBar.innerHTML = '';
             statusBar.appendChild(addStatusBtn);
-
             statuses.forEach(st => {
                 const card = document.createElement('div');
                 card.className = 'status-card';
@@ -492,16 +478,13 @@
                     <div class="status-text">${st.text}</div>
                     <div class="status-like">♥ ${st.likes}</div>
                 `;
-                // عند الضغط، يتم عمل Like
                 card.addEventListener('click', () => {
                     socket.emit('likeStatus', st.id);
-                    // مؤثر بصري بسيط عند الضغط
                     createParticles(card.getBoundingClientRect().left + 50, card.getBoundingClientRect().top + 30, '#ff0000');
                 });
                 statusBar.appendChild(card);
             });
         });
-
     </script>
 </body>
 </html>
