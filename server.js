@@ -5,41 +5,42 @@ const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
 
-// تقديم ملفات الواجهة
+// زيادة الحد الأقصى لحجم الرسالة إلى 10 ميجابايت لدعم الصور والصوت
+const io = new Server(server, {
+    maxHttpBufferSize: 1e7 // 10 MB
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
-let users = {}; // تخزين المتصلين: { socketId: username }
+let users = {};
 
 io.on('connection', (socket) => {
-    // 1. عند دخول مستخدم جديد
+    
     socket.on('join', (username) => {
         users[socket.id] = username;
-        
-        // إرسال رسالة ترحيب للجميع
         io.emit('message', {
             user: 'النظام',
             text: `انضم ${username} إلى المحادثة`,
             type: 'system'
         });
-
-        // تحديث قائمة المتصلين للجميع
         io.emit('updateUserList', Object.values(users));
     });
 
-    // 2. استقبال رسالة وإعادة بثها
-    socket.on('chatMessage', (msg) => {
+    // استقبال الرسالة (نص، صورة، أو صوت)
+    socket.on('chatMessage', (data) => {
+        // data should be: { type: 'text'|'image'|'audio', content: '...', fileName: '...' }
         const user = users[socket.id];
+        
         io.emit('message', {
             user: user,
-            text: msg,
-            type: 'chat',
-            isMe: false // سيتم تعديلها في العميل
+            type: data.type,       // text, image, audio
+            content: data.content, // النص أو بيانات Base64
+            fileName: data.fileName || '',
+            isMe: false 
         });
     });
 
-    // 3. عند خروج مستخدم
     socket.on('disconnect', () => {
         const username = users[socket.id];
         if(username) {
