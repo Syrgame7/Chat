@@ -1,7 +1,7 @@
 {
-  "name": "neon-chat-pro",
-  "version": "2.0.0",
-  "description": "Neon Chat with Voice & Images",
+  "name": "neon-chat-ultimate",
+  "version": "3.0.0",
+  "description": "Neon Chat with Statuses & Effects",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
