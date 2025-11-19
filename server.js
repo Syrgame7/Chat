@@ -1,79 +1,58 @@
 const express = require('express');
-const http = require('http');
-const socketIo = require('socket.io');
-const path = require('path');
-
 const app = express();
-const server = http.createServer(app);
-const io = socketIo(server, {
-  cors: { origin: "*", methods: ["GET", "POST"] }
-});
+const http = require('http').createServer(app);
+const io = require('socket.io')(http);
 
-const messages = { family: [], public: [] };
-const posts = [];
+app.use(express.static('public'));
 
-app.use(express.static(path.join(__dirname, 'public')));
-
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+// تخزين بيانات اللاعبين
+let players = {};
 
 io.on('connection', (socket) => {
-  let currentRoom = null;
-  let userName = 'زائر';
+    console.log('A user connected:', socket.id);
 
-  socket.on('joinRoom', (data) => {
-    userName = data.name || 'زائر';
-    currentRoom = data.room;
-    socket.join(currentRoom);
-    
-    const count = io.sockets.adapter.rooms.get(currentRoom)?.size || 0;
-    io.to(currentRoom).emit('onlineUsers', { room: currentRoom, count });
-    socket.emit('loadMessages', { room: currentRoom, messages: messages[currentRoom] || [] });
-    socket.emit('allPosts', posts);
-  });
+    // إنشاء لاعب جديد عند الاتصال
+    players[socket.id] = {
+        x: 0,
+        y: 1, // ارتفاع عن الأرض
+        z: 0,
+        color: '#' + Math.floor(Math.random()*16777215).toString(16), // لون عشوائي
+        msg: ""
+    };
 
-  socket.on('sendMessage', (data) => {
-    messages[data.room].push(data);
-    io.to(data.room).emit('receiveMessage', data);
-  });
+    // إرسال اللاعبين الموجودين حالياً للاعب الجديد
+    socket.emit('currentPlayers', players);
 
-  socket.on('sendAudio', (data) => {
-    messages[data.room].push({ ...data, type: 'audio' });
-    io.to(data.room).emit('receiveAudio', data);
-  });
+    // إبلاغ الآخرين بوجود لاعب جديد
+    socket.broadcast.emit('newPlayer', { id: socket.id, player: players[socket.id] });
 
-  socket.on('publishPost', (data) => {
-    const post = { id: Date.now(), ...data, likes: 0, comments: [] };
-    posts.push(post);
-    io.emit('newPost', post);
-  });
+    // عند حركة اللاعب
+    socket.on('playerMovement', (movementData) => {
+        if(players[socket.id]) {
+            players[socket.id].x = movementData.x;
+            players[socket.id].y = movementData.y;
+            players[socket.id].z = movementData.z;
+            // إرسال الحركة للجميع
+            socket.broadcast.emit('playerMoved', { id: socket.id, x: players[socket.id].x, y: players[socket.id].y, z: players[socket.id].z });
+        }
+    });
 
-  socket.on('likePost', (postId) => {
-    const post = posts.find(p => p.id === postId);
-    if (post) {
-      post.likes++;
-      io.emit('updatePost', post);
-    }
-  });
+    // عند إرسال رسالة نصية
+    socket.on('chatMessage', (msg) => {
+        if(players[socket.id]) {
+            io.emit('chatMessage', { id: socket.id, msg: msg });
+        }
+    });
 
-  socket.on('addComment', (data) => {
-    const post = posts.find(p => p.id === data.postId);
-    if (post) {
-      post.comments.push({ name: data.name, text: data.text });
-      io.emit('updatePost', post);
-    }
-  });
-
-  socket.on('disconnect', () => {
-    if (currentRoom) {
-      const count = io.sockets.adapter.rooms.get(currentRoom)?.size || 0;
-      io.to(currentRoom).emit('onlineUsers', { room: currentRoom, count });
-    }
-  });
+    // عند فصل الاتصال
+    socket.on('disconnect', () => {
+        console.log('User disconnected:', socket.id);
+        delete players[socket.id];
+        io.emit('userDisconnect', socket.id);
+    });
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`الخادم يعمل على ${PORT}`);
+http.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 });
