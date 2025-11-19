@@ -1,422 +1,259 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-  <title>دردشتي</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'Segoe UI', Tahoma;
-      background: #000;
-      color: white;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      padding-top: env(safe-area-inset-top, 20px);
-      padding-bottom: env(safe-area-inset-bottom, 0);
-      overflow-y: auto;
-    }
-    .header {
-      background: #075e54;
-      padding: 12px 16px;
-      font-size: 18px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      position: relative;
-      z-index: 10;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-    }
-    .tabs {
-      display: flex;
-      background: #075e54;
-      width: 100%;
-    }
-    .tab {
-      flex: 1;
-      padding: 14px 0;
-      text-align: center;
-      font-size: 16px;
-      cursor: pointer;
-      color: #ddd;
-    }
-    .tab.active {
-      color: white;
-      border-bottom: 3px solid #25D366;
-    }
-    .section {
-      position: relative;
-      flex: 1;
-      overflow-y: auto;
-      padding: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .stars {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      z-index: -1;
-    }
-    .star {
-      position: absolute;
-      background: white;
-      border-radius: 50%;
-      animation: twinkle 3s infinite;
-    }
-    @keyframes twinkle {
-      0%, 100% { opacity: 0.2; }
-      50% { opacity: 1; }
-    }
-    .msg {
-      max-width: 75%;
-      padding: 12px;
-      border-radius: 16px;
-      background: #0d3b66;
-      font-size: 15px;
-    }
-    .in { align-self: flex-start; }
-    .out { align-self: flex-end; }
-    .input-area {
-      display: flex;
-      padding: 12px;
-      background: rgba(255,255,255,0.08);
-      gap: 10px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-    .input-area input {
-      flex: 1;
-      padding: 12px 16px;
-      border: none;
-      background: rgba(0,0,0,0.3);
-      border-radius: 24px;
-      font-size: 16px;
-      color: white;
-      min-width: 180px;
-    }
-    .input-area button {
-      padding: 10px 20px;
-      background: #075e54;
-      color: white;
-      border: none;
-      border-radius: 20px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-    .voice-btn {
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      background: #5c677d;
-      color: white;
-      border: none;
-      font-size: 20px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.2s;
-    }
-    .voice-btn.recording {
-      background: #d32f2f;
-      animation: pulse 1.5s infinite;
-    }
-    @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(211,47,47,0.5); }
-      70% { box-shadow: 0 0 0 10px rgba(211,47,47,0); }
-      100% { box-shadow: 0 0 0 0 rgba(211,47,47,0); }
-    }
-    .online-indicator {
-      font-size: 14px;
-      background: #25D366;
-      padding: 6px 12px;
-      border-radius: 20px;
-    }
-    .post,
-    .post-form {
-      background: rgba(255,255,255,0.05);
-      padding: 16px;
-      border-radius: 16px;
-      margin: 16px 0;
-    }
-    .post-form textarea {
-      width: 100%;
-      padding: 12px;
-      border: none;
-      background: rgba(0,0,0,0.3);
-      border-radius: 12px;
-      color: white;
-      resize: none;
-      height: 80px;
-      font-size: 16px;
-    }
-    .post-actions {
-      margin-top: 12px;
-      display: flex;
-      gap: 16px;
-      font-size: 14px;
-      color: #a0aec0;
-      cursor: pointer;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>3D Chat World</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
+        #chat-container {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 300px;
+            pointer-events: none; /* للسماح بالنقر على الـ 3D */
+        }
+        #messages {
+            list-style: none; margin: 0; padding: 10px;
+            background: rgba(0,0,0,0.5); color: white;
+            height: 200px; overflow-y: auto; border-radius: 8px;
+            pointer-events: auto;
+        }
+        #form { display: flex; margin-top: 5px; pointer-events: auto; }
+        #input { flex: 1; padding: 10px; border-radius: 5px; border: none; }
+        #btn { padding: 10px; cursor: pointer; }
+        
+        /* فقاعة الدردشة فوق اللاعبين */
+        .chat-bubble {
+            position: absolute;
+            background: white;
+            padding: 5px 10px;
+            border-radius: 10px;
+            display: none;
+            font-size: 12px;
+            pointer-events: none;
+            transform: translate(-50%, -100%);
+        }
+    </style>
 </head>
 <body>
-  <div class="header">
-    <span>دردشتي</span>
-    <div class="online-indicator" id="onlineCount">متصلين: 0</div>
-  </div>
-  
-  <div class="tabs">
-    <div class="tab active" data-room="family">عائلة</div>
-    <div class="tab" data-room="public">عامة</div>
-    <div class="tab" data-room="posts">منشورات</div>
-  </div>
 
-  <div id="family-chat" class="section">
-    <div class="stars" id="stars-family"></div>
-  </div>
-  <div id="public-chat" class="section" style="display:none;">
-    <div class="stars" id="stars-public"></div>
-  </div>
-  <div id="posts-section" class="section" style="display:none;">
-    <div class="stars" id="stars-posts"></div>
-    <div class="post-form">
-      <textarea id="postText" placeholder="اكتب منشورك..."></textarea>
-      <button onclick="publishPost()">نشر</button>
+    <!-- واجهة الدردشة -->
+    <div id="chat-container">
+        <ul id="messages"></ul>
+        <form id="form" action="">
+            <input id="input" autocomplete="off" placeholder="اكتب رسالة..." /><button id="btn">إرسال</button>
+        </form>
     </div>
-    <div id="postsFeed"></div>
-  </div>
 
-  <div class="input-area" id="main-input">
-    <input type="text" id="msg" placeholder="اكتب رسالة..." />
-    <button class="voice-btn" id="voiceBtn" onclick="recordAudio()">🎤</button>
-    <button onclick="sendText()">إرسال</button>
-  </div>
+    <!-- مكتبات خارجية -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
 
-  <script src="/socket.io/socket.io.js"></script>
-  <script>
-    const socket = io();
-    let currentRoom = 'family';
-    let myName = localStorage.name || prompt('ما اسمك؟') || 'زائر';
-    localStorage.name = myName;
+    <script>
+        // 1. إعدادات Three.js الأساسية
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87CEEB); // لون السماء
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
 
-    // --- الأصوات ---
-    function playSound(type) {
-      const audio = new Audio(`/sounds/${type}.mp3`);
-      audio.play().catch(e => console.log(`فشل صوت ${type}:`, e));
-    }
+        // إضاءة
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
 
-    // --- النجوم ---
-    function createStars(containerId) {
-      const container = document.getElementById(containerId);
-      if (!container) return;
-      container.innerHTML = '';
-      for (let i = 0; i < 50; i++) {
-        const star = document.createElement('div');
-        star.className = 'star';
-        star.style.width = Math.random() * 2 + 1 + 'px';
-        star.style.height = star.style.width;
-        star.style.left = Math.random() * 100 + '%';
-        star.style.top = Math.random() * 100 + '%';
-        star.style.animationDuration = Math.random() * 3 + 2 + 's';
-        container.appendChild(star);
-      }
-    }
+        // الأرضية
+        const floorGeometry = new THREE.PlaneGeometry(100, 100);
+        const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 });
+        const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+        floor.rotation.x = -Math.PI / 2;
+        scene.add(floor);
 
-    // --- الدردشة ---
-    function appendMessage(name, text, isSelf, audio = null) {
-      const chat = document.getElementById(currentRoom === 'family' ? 'family-chat' : 'public-chat');
-      if (!chat) return;
-      
-      const div = document.createElement('div');
-      div.className = isSelf ? 'msg out' : 'msg in';
-      
-      if (audio) {
-        div.innerHTML = `<b>${name}:</b><br><audio controls src="${audio}"></audio>`;
-      } else {
-        div.innerHTML = `<b>${name}:</b> ${text}`;
-      }
-      
-      chat.appendChild(div);
-      chat.scrollTop = chat.scrollHeight;
-      
-      if (!isSelf) playSound('receive');
-    }
+        // 2. منطق اللعبة والاتصال
+        const socket = io();
+        const playersMeshes = {}; // لتخزين مجسمات اللاعبين
+        const mySpeed = 0.2;
+        let myId = null;
 
-    function sendText() {
-      const text = document.getElementById('msg').value.trim();
-      if (!text) return;
-      socket.emit('sendMessage', { room: currentRoom, name: myName, text });
-      playSound('send');
-      document.getElementById('msg').value = '';
-    }
+        // دالة إنشاء لاعب
+        function createPlayerMesh(playerInfo, id) {
+            const geometry = new THREE.BoxGeometry(1, 1, 1);
+            const material = new THREE.MeshStandardMaterial({ color: playerInfo.color });
+            const cube = new THREE.Mesh(geometry, material);
+            cube.position.set(playerInfo.x, playerInfo.y, playerInfo.z);
+            
+            scene.add(cube);
+            playersMeshes[id] = cube;
 
-    // --- تسجيل الصوت (مباشر بدون فتح ملفات) ---
-    async function recordAudio() {
-      const voiceBtn = document.getElementById('voiceBtn');
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        voiceBtn.classList.add('recording');
-        voiceBtn.innerHTML = '🎙️';
-        playSound('record');
-
-        const mediaRecorder = new MediaRecorder(stream);
-        const chunks = [];
-
-        mediaRecorder.ondataavailable = (e) => {
-          chunks.push(e.data);
-        };
-
-        mediaRecorder.onstop = async () => {
-          voiceBtn.classList.remove('recording');
-          voiceBtn.innerHTML = '🎤';
-          stream.getTracks().forEach(track => track.stop());
-
-          const blob = new Blob(chunks, { type: 'audio/ogg; codecs=opus' });
-          const reader = new FileReader();
-          reader.onload = () => {
-            socket.emit('sendAudio', { room: currentRoom, name: myName, audio: reader.result });
-            playSound('send');
-          };
-          reader.readAsDataURL(blob);
-        };
-
-        mediaRecorder.start();
-        setTimeout(() => { mediaRecorder.stop(); }, 8000);
-
-      } catch (err) {
-        voiceBtn.classList.remove('recording');
-        voiceBtn.innerHTML = '🎤';
-        alert('فشل التسجيل: ' + (err.message || 'الإذن مرفوض'));
-      }
-    }
-
-    // --- المنشورات ---
-    let posts = [];
-
-    function renderPosts() {
-      const feed = document.getElementById('postsFeed');
-      if (!feed) return;
-      feed.innerHTML = '';
-      posts.forEach(post => {
-        const div = document.createElement('div');
-        div.className = 'post';
-        div.innerHTML = `
-          <div><b>${post.name}:</b> ${post.text}</div>
-          <div class="post-actions">
-            <span onclick="likePost(${post.id})">👍 ${post.likes || 0}</span>
-            <span>💬 ${post.comments?.length || 0}</span>
-          </div>
-        `;
-        feed.appendChild(div);
-      });
-    }
-
-    function publishPost() {
-      const text = document.getElementById('postText').value.trim();
-      if (!text) return;
-      socket.emit('publishPost', { name: myName, text });
-      playSound('send');
-      document.getElementById('postText').value = '';
-    }
-
-    function likePost(postId) {
-      socket.emit('likePost', postId);
-      playSound('like');
-    }
-
-    // --- الاتصال ---
-    socket.on('connect', () => {
-      joinRoom(currentRoom);
-    });
-
-    function joinRoom(room) {
-      currentRoom = room;
-      socket.emit('joinRoom', { room, name: myName });
-    }
-
-    socket.on('loadMessages', (data) => {
-      if (data.room === currentRoom) {
-        const chat = document.getElementById(currentRoom === 'family' ? 'family-chat' : 'public-chat');
-        if (chat) chat.innerHTML = '';
-        data.messages.forEach(msg => {
-          if (msg.type === 'audio') {
-            appendMessage(msg.name, null, msg.name === myName, msg.audio);
-          } else {
-            appendMessage(msg.name, msg.text, msg.name === myName);
-          }
-        });
-      }
-    });
-
-    socket.on('onlineUsers', (data) => {
-      if (data.room === currentRoom) {
-        document.getElementById('onlineCount').innerText = `متصلين: ${data.count}`;
-      }
-    });
-
-    socket.on('receiveMessage', (data) => {
-      if (data.room === currentRoom) {
-        appendMessage(data.name, data.text, data.name === myName);
-      }
-    });
-
-    socket.on('receiveAudio', (data) => {
-      if (data.room === currentRoom) {
-        appendMessage(data.name, null, data.name === myName, data.audio);
-      }
-    });
-
-    socket.on('allPosts', (allPosts) => {
-      posts = allPosts;
-      renderPosts();
-    });
-
-    socket.on('newPost', (post) => {
-      posts.push(post);
-      renderPosts();
-    });
-
-    socket.on('updatePost', (updatedPost) => {
-      const index = posts.findIndex(p => p.id === updatedPost.id);
-      if (index !== -1) {
-        posts[index] = updatedPost;
-        renderPosts();
-      }
-    });
-
-    // --- التبديل بين الأقسام ---
-    document.querySelectorAll('.tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-        currentRoom = tab.dataset.room;
-        
-        document.getElementById('family-chat').style.display = currentRoom === 'family' ? 'flex' : 'none';
-        document.getElementById('public-chat').style.display = currentRoom === 'public' ? 'flex' : 'none';
-        document.getElementById('posts-section').style.display = currentRoom === 'posts' ? 'flex' : 'none';
-        document.getElementById('main-input').style.display = currentRoom === 'posts' ? 'none' : 'flex';
-        
-        if (currentRoom !== 'posts') {
-          joinRoom(currentRoom);
+            // إنشاء عنصر HTML لفقاعة الدردشة لهذا اللاعب
+            const bubble = document.createElement('div');
+            bubble.className = 'chat-bubble';
+            bubble.id = `bubble-${id}`;
+            document.body.appendChild(bubble);
         }
-      });
-    });
 
-    // --- بدء ---
-    createStars('stars-family');
-    createStars('stars-public');
-    createStars('stars-posts');
+        socket.on('connect', () => {
+            myId = socket.id;
+        });
 
-    if (socket.connected) {
-      joinRoom(currentRoom);
-    }
-  </script>
+        // تحميل اللاعبين الحاليين
+        socket.on('currentPlayers', (players) => {
+            Object.keys(players).forEach((id) => {
+                if (id !== socket.id) createPlayerMesh(players[id], id);
+            });
+            // إنشاء لاعبي أنا
+            if(players[socket.id]) createPlayerMesh(players[socket.id], socket.id);
+        });
+
+        // انضمام لاعب جديد
+        socket.on('newPlayer', (data) => {
+            createPlayerMesh(data.player, data.id);
+            playSound('join');
+        });
+
+        // حركة لاعب آخر
+        socket.on('playerMoved', (data) => {
+            if (playersMeshes[data.id]) {
+                playersMeshes[data.id].position.set(data.x, data.y, data.z);
+                updateBubblePosition(data.id);
+            }
+        });
+
+        // خروج لاعب
+        socket.on('userDisconnect', (id) => {
+            if (playersMeshes[id]) {
+                scene.remove(playersMeshes[id]);
+                delete playersMeshes[id];
+                const bubble = document.getElementById(`bubble-${id}`);
+                if(bubble) bubble.remove();
+            }
+        });
+
+        // 3. نظام الدردشة
+        const form = document.getElementById('form');
+        const input = document.getElementById('input');
+        const messages = document.getElementById('messages');
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (input.value) {
+                socket.emit('chatMessage', input.value);
+                input.value = '';
+            }
+        });
+
+        socket.on('chatMessage', (data) => {
+            // إضافة للقائمة
+            const item = document.createElement('li');
+            item.textContent = (data.id === myId ? 'أنت' : 'لاعب') + ": " + data.msg;
+            messages.appendChild(item);
+            messages.scrollTop = messages.scrollHeight;
+            
+            // إظهار فقاعة فوق اللاعب
+            showBubble(data.id, data.msg);
+            
+            // تشغيل صوت
+            playSound('msg');
+        });
+
+        // دالة إظهار الفقاعة
+        function showBubble(id, text) {
+            const bubble = document.getElementById(`bubble-${id}`);
+            if (bubble) {
+                bubble.textContent = text;
+                bubble.style.display = 'block';
+                // إخفاء بعد 3 ثواني
+                setTimeout(() => { bubble.style.display = 'none'; }, 3000);
+            }
+        }
+
+        // دالة تحديث مكان الفقاعة لتتبع اللاعب في الـ 3D
+        function updateBubblePosition(id) {
+            const bubble = document.getElementById(`bubble-${id}`);
+            const mesh = playersMeshes[id];
+            if (bubble && mesh) {
+                const vector = mesh.position.clone();
+                vector.y += 1.5; // فوق الرأس
+                vector.project(camera);
+                
+                const x = (vector.x * .5 + .5) * window.innerWidth;
+                const y = -(vector.y * .5 - .5) * window.innerHeight;
+
+                bubble.style.left = `${x}px`;
+                bubble.style.top = `${y}px`;
+            }
+        }
+
+        // 4. التحكم والحركة
+        const keys = {};
+        document.addEventListener('keydown', (e) => keys[e.code] = true);
+        document.addEventListener('keyup', (e) => keys[e.code] = false);
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (myId && playersMeshes[myId]) {
+                const myMesh = playersMeshes[myId];
+                let moved = false;
+
+                if (keys['ArrowUp'] || keys['KeyW']) { myMesh.position.z -= mySpeed; moved = true; }
+                if (keys['ArrowDown'] || keys['KeyS']) { myMesh.position.z += mySpeed; moved = true; }
+                if (keys['ArrowLeft'] || keys['KeyA']) { myMesh.position.x -= mySpeed; moved = true; }
+                if (keys['ArrowRight'] || keys['KeyD']) { myMesh.position.x += mySpeed; moved = true; }
+
+                if (moved) {
+                    camera.position.set(myMesh.position.x, myMesh.position.y + 5, myMesh.position.z + 10);
+                    camera.lookAt(myMesh.position);
+                    socket.emit('playerMovement', { x: myMesh.position.x, y: myMesh.position.y, z: myMesh.position.z });
+                    updateBubblePosition(myId);
+                } else {
+                    // تحديث الكاميرا حتى لو لم نتحرك (في البداية)
+                    camera.position.set(myMesh.position.x, myMesh.position.y + 5, myMesh.position.z + 10);
+                    camera.lookAt(myMesh.position);
+                }
+            }
+
+            // تحديث مكان فقاعات اللاعبين الآخرين
+            Object.keys(playersMeshes).forEach(id => {
+                if (id !== myId) updateBubblePosition(id);
+            });
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // 5. نظام صوت بسيط (Beep synthesizer)
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            if (type === 'msg') {
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(500, audioCtx.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(1000, audioCtx.currentTime + 0.1);
+            } else { // join
+                oscillator.type = 'triangle';
+                oscillator.frequency.setValueAtTime(200, audioCtx.currentTime);
+            }
+            
+            oscillator.start();
+            gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.5);
+            oscillator.stop(audioCtx.currentTime + 0.5);
+        }
+        
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+    </script>
 </body>
-  </html>
+</html>
