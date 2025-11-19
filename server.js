@@ -6,40 +6,70 @@ const path = require('path');
 const app = express();
 const server = http.createServer(app);
 
-// زيادة الحد الأقصى لحجم الرسالة إلى 10 ميجابايت لدعم الصور والصوت
+// زيادة الحجم لاستيعاب الصور
 const io = new Server(server, {
-    maxHttpBufferSize: 1e7 // 10 MB
+    maxHttpBufferSize: 1e7 
 });
 
 app.use(express.static(path.join(__dirname, 'public')));
 
 let users = {};
+let statuses = []; // تخزين الحالات: { id, user, text, likes, time }
 
 io.on('connection', (socket) => {
     
     socket.on('join', (username) => {
         users[socket.id] = username;
+        
+        // إعلام الجميع بدخول مستخدم (نوع خاص للتميز الصوتي)
         io.emit('message', {
             user: 'النظام',
             text: `انضم ${username} إلى المحادثة`,
-            type: 'system'
+            type: 'join_notification' // نوع جديد لتشغيل صوت الدخول
         });
+        
         io.emit('updateUserList', Object.values(users));
+        // إرسال الحالات الحالية للمستخدم الجديد
+        socket.emit('updateStatuses', statuses);
     });
 
-    // استقبال الرسالة (نص، صورة، أو صوت)
+    // استقبال الرسائل
     socket.on('chatMessage', (data) => {
-        // data should be: { type: 'text'|'image'|'audio', content: '...', fileName: '...' }
         const user = users[socket.id];
-        
         io.emit('message', {
             user: user,
-            type: data.type,       // text, image, audio
-            content: data.content, // النص أو بيانات Base64
-            fileName: data.fileName || '',
+            type: data.type,
+            content: data.content,
             isMe: false 
         });
     });
+
+    // --- نظام الحالات ---
+    socket.on('publishStatus', (text) => {
+        const user = users[socket.id];
+        if (!user || !text) return;
+
+        const newStatus = {
+            id: Date.now(), // معرف فريد بسيط
+            user: user,
+            text: text,
+            likes: 0
+        };
+        
+        statuses.unshift(newStatus); // إضافة للأحدث
+        if (statuses.length > 20) statuses.pop(); // الاحتفاظ بآخر 20 حالة فقط
+        
+        io.emit('updateStatuses', statuses);
+    });
+
+    socket.on('likeStatus', (statusId) => {
+        const status = statuses.find(s => s.id === statusId);
+        if (status) {
+            status.likes += 1;
+            io.emit('updateStatuses', statuses);
+        }
+    });
+    // -------------------
 
     socket.on('disconnect', () => {
         const username = users[socket.id];
