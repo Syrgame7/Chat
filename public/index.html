@@ -2,7 +2,8 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
+    <!-- إضافة viewport-fit=cover لضمان التعامل الصحيح مع النوتش والشاشات الكاملة -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content, viewport-fit=cover">
     <title>Neon Galaxy Chat</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
@@ -19,14 +20,19 @@
         body {
             background-color: var(--bg-color);
             color: #fff;
-            height: 100dvh;
+            height: 100dvh; /* استخدام الارتفاع الديناميكي */
             display: flex;
             flex-direction: column;
             overflow: hidden;
             position: relative;
+            
+            /* --- الحل الجذري لمشكلة الشريط العلوي --- */
+            /* نستخدم max لنضمن نزول المحتوى 35 بكسل على الأقل أو حسب أبعاد النوتش */
+            padding-top: max(35px, env(safe-area-inset-top));
+            padding-bottom: env(safe-area-inset-bottom);
         }
 
-        /* --- 1. تكثيف النجوم (تمت إضافة الكثير من النقاط) --- */
+        /* الخلفية ثابتة خلف البادينج */
         .stars-bg {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -37,41 +43,29 @@
                 radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 2px),
                 radial-gradient(white, rgba(255,255,255,.1) 2px, transparent 3px);
             background-size: 550px 550px, 350px 350px, 250px 250px;
-            /* زيادة كثافة النجوم هنا */
             background-position: 
                 0 0, 40px 60px, 130px 270px, 70px 100px, 
                 150px 150px, 300px 300px, 450px 100px, 
                 20px 300px, 200px 20px, 400px 400px,
                 90px 20px, 320px 120px, 420px 280px;
-            animation: starMove 120s linear infinite; /* حركة أبطأ لتبدو واقعية */
+            animation: starMove 120s linear infinite;
         }
         @keyframes starMove {
-            from { background-position: 
-                0 0, 40px 60px, 130px 270px, 70px 100px, 
-                150px 150px, 300px 300px, 450px 100px, 
-                20px 300px, 200px 20px, 400px 400px,
-                90px 20px, 320px 120px, 420px 280px; 
-            }
-            to { background-position: 
-                550px 550px, 590px 610px, 680px 820px, 620px 650px,
-                700px 700px, 850px 850px, 1000px 650px,
-                570px 850px, 750px 570px, 950px 950px,
-                640px 570px, 870px 670px, 970px 830px;
-            }
+            from { background-position: 0 0, 40px 60px, 130px 270px, 70px 100px, 150px 150px, 300px 300px, 450px 100px, 20px 300px, 200px 20px, 400px 400px, 90px 20px, 320px 120px, 420px 280px; }
+            to { background-position: 550px 550px, 590px 610px, 680px 820px, 620px 650px, 700px 700px, 850px 850px, 1000px 650px, 570px 850px, 750px 570px, 950px 950px, 640px 570px, 870px 670px, 970px 830px; }
         }
 
         /* --- شاشة الدخول --- */
         #loginScreen {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9);
+            background: rgba(0,0,0,0.95); /* زيادة التعتيم */
             z-index: 100;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             gap: 20px;
-            backdrop-filter: blur(5px);
         }
 
         .neon-title {
@@ -109,45 +103,61 @@
         .main-container {
             display: flex;
             flex-direction: column;
-            height: 100%;
+            height: 100%; /* تأخذ المساحة المتبقية بعد الـ padding في الـ body */
             display: none;
+            width: 100%;
         }
 
-        /* --- 2. تعديل ألوان الحالات (Status) --- */
+        /* --- شريط الحالات (تم إصلاح الألوان) --- */
         .status-bar {
-            background: rgba(0,0,0,0.3); /* شفافية أكثر */
+            background: rgba(0,0,0,0.2); 
             padding: 10px;
             display: flex;
             gap: 10px;
             overflow-x: auto;
-            height: 85px;
+            height: 90px; /* زيادة الارتفاع قليلاً */
             flex-shrink: 0;
-            border-bottom: 1px solid rgba(0, 243, 255, 0.3);
+            border-bottom: 1px solid rgba(0, 243, 255, 0.2);
         }
 
         .add-status-btn {
-            min-width: 60px; height: 60px;
+            min-width: 65px; height: 65px;
             border-radius: 15px;
             border: 2px dashed var(--neon-green);
             display: flex; justify-content: center; align-items: center;
-            font-size: 1.5rem; color: var(--neon-green);
-            cursor: pointer; background: rgba(0, 255, 0, 0.1);
+            font-size: 1.8rem; color: var(--neon-green);
+            cursor: pointer; background: rgba(0, 255, 0, 0.05);
         }
 
         .status-card {
-            min-width: 120px; max-width: 160px; height: 60px;
-            background: rgba(20, 20, 20, 0.9); /* خلفية غامقة للنص */
+            min-width: 130px; max-width: 160px; height: 65px;
+            /* خلفية سوداء معتمة لضمان ظهور النص الأبيض */
+            background: #111 !important; 
             border: 1px solid var(--neon-pink);
             border-radius: 12px;
-            padding: 5px 10px;
+            padding: 8px;
             display: flex; flex-direction: column; justify-content: space-between;
             cursor: pointer;
             box-shadow: 0 0 5px rgba(188, 19, 254, 0.2);
         }
-        /* جعل اسم صاحب الحالة بلون مميز */
-        .status-user { font-weight: bold; color: var(--neon-blue); font-size: 0.7rem; }
-        /* جعل نص الحالة أبيض ناصع */
-        .status-text { color: #ffffff; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+        
+        .status-user { 
+            font-weight: bold; 
+            color: var(--neon-blue); 
+            font-size: 0.7rem; 
+        }
+        
+        /* فرض اللون الأبيض للنص */
+        .status-text { 
+            color: #ffffff !important; 
+            font-size: 0.9rem; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+            font-weight: bold;
+            text-shadow: 0 0 2px #000;
+        }
+        
         .status-like { align-self: flex-end; color: #ff4444; font-size: 0.75rem; }
 
         /* --- الشات --- */
@@ -175,20 +185,18 @@
         .msg-image { max-width: 100%; border-radius: 8px; border: 1px solid #fff; margin-top: 5px; }
         .msg-audio { width: 100%; height: 35px; margin-top: 5px; }
 
-        /* 3. جعل الأسماء بالأخضر النيون الساطع */
         .sender-name {
             font-size: 0.75rem;
             font-weight: bold;
-            color: var(--neon-green); /* اللون الأخضر */
-            text-shadow: 0 0 3px rgba(10, 255, 10, 0.5); /* توهج بسيط */
+            color: var(--neon-green);
+            text-shadow: 0 0 3px rgba(10, 255, 10, 0.5);
             margin-bottom: 5px;
         }
 
         .received {
             align-self: flex-start;
             border: 1px solid var(--neon-pink);
-            background: rgba(20, 20, 20, 0.8); /* خلفية أغمق للقراءة */
-            box-shadow: 0 0 10px rgba(188, 19, 254, 0.1);
+            background: rgba(30, 30, 30, 0.9); /* تعتيم الخلفية */
             border-top-right-radius: 0;
         }
         .received .msg-content { color: #fff; }
@@ -196,11 +204,9 @@
         .sent {
             align-self: flex-end;
             border: 1px solid var(--neon-blue);
-            background: rgba(20, 20, 20, 0.8);
-            box-shadow: 0 0 10px rgba(0, 243, 255, 0.1);
+            background: rgba(30, 30, 30, 0.9);
             border-top-left-radius: 0;
         }
-        /* إخفاء اسمي أنا عند الإرسال لتوفير المساحة أو جعله بلون مختلف */
         .sent .sender-name { display: none; } 
 
         .system-msg {
@@ -211,10 +217,8 @@
             border-radius: 20px;
             font-size: 0.75rem;
             border: 1px solid rgba(255,255,255,0.2);
-            text-shadow: 0 0 2px #000;
         }
 
-        /* البارتكل */
         .particle {
             position: absolute; width: 5px; height: 5px; border-radius: 50%;
             pointer-events: none; animation: explode 0.8s ease-out forwards; z-index: 10;
@@ -227,10 +231,9 @@
         /* الإدخال */
         .input-area {
             padding: 10px;
-            background: rgba(10, 10, 10, 0.95);
+            background: rgba(15, 15, 15, 0.98);
             border-top: 1px solid var(--neon-blue);
             display: flex; gap: 8px; align-items: center;
-            padding-bottom: max(10px, env(safe-area-inset-bottom));
         }
 
         #msgInput {
@@ -243,6 +246,7 @@
             width: 40px; height: 40px; border-radius: 50%; border: none;
             background: #333; color: #fff; font-size: 1.2rem;
             cursor: pointer; display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
         }
         #sendBtn { background: var(--neon-blue); color: #000; }
         .recording { background: var(--neon-pink) !important; animation: pulseTitle 1s infinite; }
@@ -281,10 +285,8 @@
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         const audioCtx = new AudioContext();
 
-        // --- 4. تحسين الصوت ليكون أقوى ---
         function playSound(type) {
             if(audioCtx.state === 'suspended') audioCtx.resume();
-            
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.connect(gain);
@@ -292,7 +294,6 @@
             const now = audioCtx.currentTime;
 
             if (type === 'send') {
-                // صوت خفيف عند الإرسال
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(800, now);
                 osc.frequency.exponentialRampToValueAtTime(100, now + 0.15);
@@ -300,20 +301,15 @@
                 gain.gain.linearRampToValueAtTime(0, now + 0.15);
                 osc.start(now);
                 osc.stop(now + 0.15);
-
             } else if (type === 'receive') {
-                // صوت قوي ورنان عند الاستقبال
-                osc.type = 'triangle'; // موجة أقوى من sine
+                osc.type = 'triangle';
                 osc.frequency.setValueAtTime(500, now);
-                osc.frequency.linearRampToValueAtTime(1000, now + 0.1); // نغمة تصاعدية "Ding"
-                
+                osc.frequency.linearRampToValueAtTime(1000, now + 0.1);
                 gain.gain.setValueAtTime(0, now);
-                gain.gain.linearRampToValueAtTime(0.4, now + 0.05); // رفع الصوت
+                gain.gain.linearRampToValueAtTime(0.4, now + 0.05);
                 gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
-                
                 osc.start(now);
                 osc.stop(now + 0.5);
-
             } else if (type === 'join') {
                 osc.type = 'sawtooth';
                 osc.frequency.setValueAtTime(200, now);
@@ -342,7 +338,6 @@
             loginScreen.style.display = 'none';
             mainApp.style.display = 'flex';
             socket.emit('join', name);
-            // تفعيل الصوت عند أول لمسة
             if(audioCtx.state === 'suspended') audioCtx.resume();
             playSound('join');
         });
@@ -379,7 +374,6 @@
                 else if(data.type === 'image') content = `<img src="${data.content}" class="msg-image">`;
                 else if(data.type === 'audio') content = `<audio controls src="${data.content}" class="msg-audio"></audio>`;
 
-                // تم وضع الاسم داخل span مع كلاس sender-name ليأخذ اللون الأخضر
                 div.innerHTML = `
                     <span class="sender-name">${data.user}</span>
                     ${content}
@@ -387,7 +381,6 @@
                 
                 if(!isMe) {
                     playSound('receive');
-                    // تأثير ضوئي بسيط عند الاستلام
                     document.body.style.boxShadow = "inset 0 0 20px var(--neon-pink)";
                     setTimeout(() => document.body.style.boxShadow = "none", 200);
                 }
@@ -406,7 +399,7 @@
 
         function sendMessage() {
             const txt = msgInput.value.trim();
-            if(!txt) return;
+            if(!txt) return; // هذا السطر يمنع إرسال الرسائل الفارغة
             socket.emit('chatMessage', { type: 'text', content: txt });
             playSound('send');
             msgInput.value = '';
@@ -464,7 +457,7 @@
 
         addStatusBtn.addEventListener('click', () => {
             const text = prompt("اكتب حالتك الجديدة:");
-            if(text) socket.emit('publishStatus', text);
+            if(text && text.trim()) socket.emit('publishStatus', text);
         });
 
         socket.on('updateStatuses', (statuses) => {
