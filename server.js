@@ -1,91 +1,55 @@
 const express = require('express');
-const http = require('http');
-const { Server } = require("socket.io");
-const path = require('path');
-
 const app = express();
-const server = http.createServer(app);
-
-// زيادة الحجم لاستيعاب الصور
-const io = new Server(server, {
-    maxHttpBufferSize: 1e7 
+const http = require('http').createServer(app);
+const io = require('socket.io')(http, {
+    cors: { origin: "*" }
 });
 
-app.use(express.static(path.join(__dirname, 'public')));
+// تقديم ملفات الموقع
+app.use(express.static('public'));
 
+// تخزين المستخدمين والرسائل في الذاكرة (بديل قاعدة البيانات)
 let users = {};
-let statuses = []; // تخزين الحالات: { id, user, text, likes, time }
+let messages = [];
 
 io.on('connection', (socket) => {
-    
-    socket.on('join', (username) => {
-        users[socket.id] = username;
-        
-        // إعلام الجميع بدخول مستخدم (نوع خاص للتميز الصوتي)
-        io.emit('message', {
-            user: 'النظام',
-            text: `انضم ${username} إلى المحادثة`,
-            type: 'join_notification' // نوع جديد لتشغيل صوت الدخول
+    console.log('مستخدم اتصل: ' + socket.id);
+
+    // عند دخول مستخدم جديد
+    socket.on('join', (userData) => {
+        users[socket.id] = userData;
+        // إرسال المستخدمين القدامى والرسائل القديمة للمستخدم الجديد
+        socket.emit('init-data', { users, messages });
+        // إعلام الجميع بمستخدم جديد
+        socket.broadcast.emit('user-joined', { id: socket.id, data: userData });
+    });
+
+    // استقبال رسالة نصية
+    socket.on('send-message', (msgData) => {
+        const fullMsg = { ...msgData, id: socket.id, timestamp: Date.now() };
+        messages.push(fullMsg);
+        // الاحتفاظ بآخر 100 رسالة فقط لتوفير الذاكرة
+        if(messages.length > 100) messages.shift();
+        io.emit('new-message', fullMsg);
+    });
+
+    // --- نظام الغرف الصوتية (WebRTC Signaling) ---
+    // عندما يريد مستخدم التحدث، يرسل إشارة للبقية
+    socket.on('voice-signal', (data) => {
+        io.to(data.target).emit('voice-signal', {
+            signal: data.signal,
+            callerID: socket.id
         });
-        
-        io.emit('updateUserList', Object.values(users));
-        // إرسال الحالات الحالية للمستخدم الجديد
-        socket.emit('updateStatuses', statuses);
     });
 
-    // استقبال الرسائل
-    socket.on('chatMessage', (data) => {
-        const user = users[socket.id];
-        io.emit('message', {
-            user: user,
-            type: data.type,
-            content: data.content,
-            isMe: false 
-        });
-    });
-
-    // --- نظام الحالات ---
-    socket.on('publishStatus', (text) => {
-        const user = users[socket.id];
-        if (!user || !text) return;
-
-        const newStatus = {
-            id: Date.now(), // معرف فريد بسيط
-            user: user,
-            text: text,
-            likes: 0
-        };
-        
-        statuses.unshift(newStatus); // إضافة للأحدث
-        if (statuses.length > 20) statuses.pop(); // الاحتفاظ بآخر 20 حالة فقط
-        
-        io.emit('updateStatuses', statuses);
-    });
-
-    socket.on('likeStatus', (statusId) => {
-        const status = statuses.find(s => s.id === statusId);
-        if (status) {
-            status.likes += 1;
-            io.emit('updateStatuses', statuses);
-        }
-    });
-    // -------------------
-
+    // عند خروج مستخدم
     socket.on('disconnect', () => {
-        const username = users[socket.id];
-        if(username) {
-            delete users[socket.id];
-            io.emit('message', {
-                user: 'النظام',
-                text: `غادر ${username} المحادثة`,
-                type: 'system'
-            });
-            io.emit('updateUserList', Object.values(users));
-        }
+        delete users[socket.id];
+        io.emit('user-left', socket.id);
     });
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+http.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 });
