@@ -1,7 +1,7 @@
 {
-  "name": "neon-chat-ultimate",
-  "version": "3.0.0",
-  "description": "Neon Chat with Statuses & Effects",
+  "name": "chat-moon-syria",
+  "version": "1.0.0",
+  "description": "Chat Moon Socket.io",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -9,5 +9,8 @@
   "dependencies": {
     "express": "^4.18.2",
     "socket.io": "^4.6.1"
+  },
+  "engines": {
+    "node": "16.x"
   }
 }
